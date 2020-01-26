@@ -37,57 +37,16 @@ myHIDSimplePacketComs.connect();
 
 % Create a PacketProcessor object to send data to the nucleo firmware
 pp = PacketProcessor(myHIDSimplePacketComs);
-try
-    SERV_ID = 03;            % we will be talking to server ID 03 on
-    % the Nucleo
-    
-    % Create csv file to print data to
-    csvfile = fopen(sprintf('log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
-    fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
-    
-    
-    DEBUG   = true;          % enables/disables debug prints
-    
-    % Instantiate a packet - the following instruction allocates 64
-    % bytes for this purpose. Recall that the HID interface supports
-    % packet sizes up to 64 bytes.
-    packet = zeros(15, 1, 'single');
-    
-    for k = 1:6 %% Set maximum to amount of cycles desired
-        tic
-        packet = zeros(15, 1, 'single');
-        
-        % Send packet to the server and get the response
-        %pp.write sends a 15 float packet to the micro controller
-        pp.write(SERV_ID, packet);
-        
-        pause(0.003); % Minimum amount of time required between write and read
-        
-        %pp.read reads a returned 15 float backet from the nucleo.
-        returnPacket = pp.read(SERV_ID);
-        toc
-        
-        if DEBUG
-            disp('Sent Packet:');
-            disp(packet);
-            disp('Received Packet:');
-            disp(returnPacket);
-        end
-                
-        fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket);
-        
-        toc
-        pause(1) %timeit(returnPacket) !FIXME why is this needed?
-        
-    end
-    fclose(csvfile);
-    
-    
-catch exception
-    getReport(exception)
-    disp('Exited on error, clean shutdown');
-end
 
+%% Run status command 6 times and record data in a .csv file with the timestamp as a name
+csvfile = fopen(sprintf('log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
+fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
+for k=1:6 %% Revise maximum to number of datapoints to be recorded
+    returnPacket=status(pp);
+    fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket);
+end
+fclose(csvfile);
+    
 % Clear up memory upon termination
 pp.shutdown()
 
