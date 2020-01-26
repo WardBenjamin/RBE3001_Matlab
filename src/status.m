@@ -3,11 +3,7 @@ function returnPacket = status(pp)
         SERV_ID = 03;            % we will be talking to server ID 03 on
         % the Nucleo
 
-        % Create csv file to print data to
-        csvfile = fopen(sprintf('log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
-        fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
-
-
+       
         DEBUG   = true;          % enables/disables debug prints
 
         % Instantiate a packet - the following instruction allocates 64
@@ -34,15 +30,10 @@ function returnPacket = status(pp)
             disp(returnPacket);
         end
 
-        fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket);
-
         toc
         pause(1) %timeit(returnPacket) !FIXME why is this needed?
-
         
-        fclose(csvfile);
-
-
+        
     catch exception
         getReport(exception)
         disp('Exited on error, clean shutdown');
