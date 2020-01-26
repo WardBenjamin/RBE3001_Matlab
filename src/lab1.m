@@ -17,6 +17,8 @@ clear
 clear java
 clear classes;
 
+addpath('.\lib'); % Ensure that lib folder is on filepath
+
 vid = hex2dec('3742');
 pid = hex2dec('0007');
 
