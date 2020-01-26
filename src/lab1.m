@@ -38,7 +38,7 @@ myHIDSimplePacketComs.connect();
 % Create a PacketProcessor object to send data to the nucleo firmware
 pp = PacketProcessor(myHIDSimplePacketComs);
 try
-    SERV_ID = 03;            % we will be talking to server ID 01 on
+    SERV_ID = 03;            % we will be talking to server ID 03 on
     % the Nucleo
     
     % Create csv file to print data to
@@ -73,14 +73,8 @@ try
             disp('Received Packet:');
             disp(returnPacket);
         end
-        
-        data = zeros(6, 1);
-        
-        y = 1;
-        for x = 1:6
-            data(x) = swapbytes(typecast(uint8([returnPacket(y), returnPacket(y+1), returnPacket(y+2), returnPacket(y+3)]),'single'));
-            y =+ 4;
-        end
+                
+        fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket);
         
         toc
         pause(1) %timeit(returnPacket) !FIXME why is this needed?
