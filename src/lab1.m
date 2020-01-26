@@ -48,7 +48,11 @@ for k=1:6 %% Revise maximum to number of datapoints to be recorded
     fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket);
 end
 fclose(csvfile);
-    
+
+%% Send calibration packet
+statusPacket = status(pp);
+calibration(pp, statusPacket);
+
 % Clear up memory upon termination
 pp.shutdown()
 
