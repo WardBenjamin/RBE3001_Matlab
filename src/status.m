@@ -15,29 +15,29 @@ function returnPacket = status(pp)
         % packet sizes up to 64 bytes.
         packet = zeros(15, 1, 'single');
 
-            tic
-        
-            % Send packet to the server and get the response
-            %pp.write sends a 15 float packet to the micro controller
-            pp.write(SERV_ID, packet);
+        tic
 
-            pause(0.003); % Minimum amount of time required between write and read
+        % Send packet to the server and get the response
+        %pp.write sends a 15 float packet to the micro controller
+        pp.write(SERV_ID, packet);
 
-            %pp.read reads a returned 15 float backet from the nucleo.
-            returnPacket = pp.read(SERV_ID);
-            toc
+        pause(0.003); % Minimum amount of time required between write and read
 
-            if DEBUG
-                disp('Sent Packet:');
-                disp(packet);
-                disp('Received Packet:');
-                disp(returnPacket);
-            end
+        %pp.read reads a returned 15 float backet from the nucleo.
+        returnPacket = pp.read(SERV_ID);
+        toc
 
-            fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket);
+        if DEBUG
+            disp('Sent Packet:');
+            disp(packet);
+            disp('Received Packet:');
+            disp(returnPacket);
+        end
 
-            toc
-            pause(1) %timeit(returnPacket) !FIXME why is this needed?
+        fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket);
+
+        toc
+        pause(1) %timeit(returnPacket) !FIXME why is this needed?
 
         
         fclose(csvfile);
