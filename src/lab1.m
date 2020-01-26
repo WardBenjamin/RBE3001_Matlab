@@ -1,13 +1,13 @@
 %%
-% RBE3001 - Laboratory 1 
-% 
+% RBE3001 - Laboratory 1
+%
 % Instructions
 % ------------
 % Welcome again! This MATLAB script is your starting point for Lab
 % 1 of RBE3001. The sample code below demonstrates how to establish
 % communication between this script and the Nucleo firmware, send
 % setpoint commands and receive sensor data.
-% 
+%
 % IMPORTANT - understanding the code below requires being familiar
 % with the Nucleo firmware. Read that code first.
 
@@ -36,56 +36,59 @@ myHIDSimplePacketComs.setVid(vid);
 myHIDSimplePacketComs.connect();
 
 % Create a PacketProcessor object to send data to the nucleo firmware
-pp = PacketProcessor(myHIDSimplePacketComs); 
+pp = PacketProcessor(myHIDSimplePacketComs);
 try
-  SERV_ID = 01;            % we will be talking to server ID 01 on
-                           % the Nucleo
-
-  DEBUG   = true;          % enables/disables debug prints
-
-  % Instantiate a packet - the following instruction allocates 64
-  % bytes for this purpose. Recall that the HID interface supports
-  % packet sizes up to 64 bytes.
-  packet = zeros(15, 1, 'single');
-
-  % The following code generates a sinusoidal trajectory to be
-  % executed on joint 1 of the arm and iteratively sends the list of
-  % setpoints to the Nucleo firmware. 
-  viaPts = [0, -400, 400, -400, 400, 0];
-
-  for k = viaPts
-      tic
-      packet = zeros(15, 1, 'single');
-      packet(1) = k;
-
-      % Send packet to the server and get the response      
-      %pp.write sends a 15 float packet to the micro controller
-       pp.write(SERV_ID, packet); 
-       
-       pause(0.003); % Minimum amount of time required between write and read
-       
-       %pp.read reads a returned 15 float backet from the nucleo.
-       returnPacket = pp.read(SERV_ID);
-      toc
-
-      if DEBUG
-          disp('Sent Packet:');
-          disp(packet);
-          disp('Received Packet:');
-          disp(returnPacket);
-      end
-      
-      for x = 0:3
-          packet((x*3)+1)=0.1;
-          packet((x*3)+2)=0;
-          packet((x*3)+3)=0;
-      end
-      
-      toc
-      pause(1) %timeit(returnPacket) !FIXME why is this needed?
-      
-  end
-  
+    SERV_ID = 03;            % we will be talking to server ID 01 on
+    % the Nucleo
+    
+    % Create csv file to print data to
+    csvfile = fopen(sprintf('log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
+    fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
+    
+    
+    DEBUG   = true;          % enables/disables debug prints
+    
+    % Instantiate a packet - the following instruction allocates 64
+    % bytes for this purpose. Recall that the HID interface supports
+    % packet sizes up to 64 bytes.
+    packet = zeros(15, 1, 'single');
+    
+    for k = 1:6 %% Set maximum to amount of cycles desired
+        tic
+        packet = zeros(15, 1, 'single');
+        
+        % Send packet to the server and get the response
+        %pp.write sends a 15 float packet to the micro controller
+        pp.write(SERV_ID, packet);
+        
+        pause(0.003); % Minimum amount of time required between write and read
+        
+        %pp.read reads a returned 15 float backet from the nucleo.
+        returnPacket = pp.read(SERV_ID);
+        toc
+        
+        if DEBUG
+            disp('Sent Packet:');
+            disp(packet);
+            disp('Received Packet:');
+            disp(returnPacket);
+        end
+        
+        data = zeros(6, 1);
+        
+        y = 1;
+        for x = 1:6
+            data(x) = swapbytes(typecast(uint8([returnPacket(y), returnPacket(y+1), returnPacket(y+2), returnPacket(y+3)]),'single'));
+            y =+ 4;
+        end
+        
+        toc
+        pause(1) %timeit(returnPacket) !FIXME why is this needed?
+        
+    end
+    fclose(csvfile);
+    
+    
 catch exception
     getReport(exception)
     disp('Exited on error, clean shutdown');
