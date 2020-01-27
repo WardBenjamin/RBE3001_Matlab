@@ -17,7 +17,7 @@ clear
 clear java
 clear classes;
 
-addpath('.\lib'); % Ensure that lib folder is on filepath
+addpath('../lib'); % Ensure that lib folder is on filepath
 
 vid = hex2dec('3742');
 pid = hex2dec('0007');
@@ -45,13 +45,14 @@ csvfile = fopen(sprintf('log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a')
 fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
 for k=1:6 %% Revise maximum to number of datapoints to be recorded
     returnPacket=status(pp);
-    fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket);
+    fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket(1:6));
 end
 fclose(csvfile);
 
 %% Send calibration packet
-statusPacket = status(pp);
-calibration(pp, statusPacket);
+% statusPacket = status(pp);
+% calibration(pp, statusPacket);
+% statusPacket = status(pp);
 
 % Clear up memory upon termination
 pp.shutdown()
