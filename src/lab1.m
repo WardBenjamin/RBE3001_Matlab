@@ -54,7 +54,6 @@ statusPacket = status(pp);
 calibration(pp, statusPacket);
 statusPacket = status(pp);
 
-%% Plot 
 
 % Clear up memory upon termination
 pp.shutdown()
