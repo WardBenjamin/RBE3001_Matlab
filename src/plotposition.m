@@ -25,16 +25,22 @@ myHIDSimplePacketComs.connect();
 % Create a PacketProcessor object to send data to the nucleo firmware
 pp = PacketProcessor(myHIDSimplePacketComs);
 
+secondsToRecord = 5;
+frequency = 40;
+period = 1 / frequency; % 50 Hz
+loop_iterations = secondsToRecord * frequency;
+
 %% Plot Base joint angle
-r = rateControl(1);
-joint = zeros(40, 1);
-time = zeros(40, 1);
-for i = 1:40
-    t = 
+joint_values = zeros(40, 1);
+time_values = zeros(40, 1);
+for idx = 1:loop_iterations
     returnPacket = status(pp);
-    joint(i)=returnPacket(0);
-    waitfor(r);
+    joint_values(idx) = returnPacket(1);
+    elapsed = toc;
+    sleep_time = period - (elapsed - 1)
+    java.lang.Thread.sleep(sleep_time * 1000);
+    toc
 end
-plot 
+% plot 
 % Clear up memory upon termination
 pp.shutdown()
