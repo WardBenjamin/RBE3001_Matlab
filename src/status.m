@@ -4,7 +4,7 @@ function returnPacket = status(pp)
         % the Nucleo
 
        
-        DEBUG   = true;          % enables/disables debug prints
+        DEBUG   = false;          % enables/disables debug prints
 
         % Instantiate a packet - the following instruction allocates 64
         % bytes for this purpose. Recall that the HID interface supports
@@ -12,7 +12,7 @@ function returnPacket = status(pp)
         packet = zeros(15, 1, 'single');
         packet(15) = 1;
 
-        tic
+%         tic;
 
         % Send packet to the server and get the response
         %pp.write sends a 15 float packet to the micro controller
@@ -22,7 +22,7 @@ function returnPacket = status(pp)
 
         %pp.read reads a returned 15 float backet from the nucleo.
         returnPacket = pp.read(SERV_ID);
-        toc
+%         toc;
 
         if DEBUG
             disp('Sent Packet:');
@@ -31,8 +31,8 @@ function returnPacket = status(pp)
             disp(returnPacket);
         end
 
-        toc
-        pause(1) %timeit(returnPacket) !FIXME why is this needed?
+%         toc;
+%         pause(1) %timeit(returnPacket) !FIXME why is this needed?
         
         
     catch exception
