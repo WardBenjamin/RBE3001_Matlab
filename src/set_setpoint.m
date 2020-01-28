@@ -11,8 +11,8 @@ function returnPacket = set_setpoint(pp, setpoints)
         % packet sizes up to 64 bytes.
         packet = zeros(15, 1, 'single');
         packet(1) = setpoints(1);
-        packet(2) = setpoints(2);
-        packet(3) = setpoints(3);
+        packet(4) = setpoints(2);
+        packet(7) = setpoints(3);
         packet(15) = 1; % Wakeup gate
 
 %         tic;
@@ -28,9 +28,9 @@ function returnPacket = set_setpoint(pp, setpoints)
 %         toc;
 
         if DEBUG
-            disp('Sent Packet:');
+            disp('Sent Packet Setpoint:');
             disp(packet);
-            disp('Received Packet:');
+            disp('Received Packet Setpoint:');
             disp(returnPacket);
         end
 

@@ -62,8 +62,12 @@ pause(.1);
 
 set_setpoint(pp, [0,0,0]);
 pause(.1);
-set_setpoint(pp, [500,0,0]);
+set_setpoint(pp, [500,200,0]);
 pause(.1);
+%set_setpoint(pp, [100,50,50]);
+%pause(.6);
+%set_setpoint(pp, [-300,200,150]);
+
 
 tic
 for idx = 1:loop_iterations  
