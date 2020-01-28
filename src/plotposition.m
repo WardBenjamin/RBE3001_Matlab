@@ -34,7 +34,7 @@ loop_iterations = secondsToRecord * frequency;
 %% Plot joint angles
 joint1_values = 0;
 joint2_values = 0;
-joint3_values
+joint3_values = 0;
 time_values = 0;
 
 hold on
