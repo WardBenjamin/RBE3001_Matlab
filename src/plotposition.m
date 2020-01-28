@@ -31,15 +31,34 @@ frequency = 5;
 period = 1 / frequency; % 50 Hz
 loop_iterations = secondsToRecord * frequency;
 
-%% Plot Base joint angle
-joint_values = 0;
+%% Plot joint angles
+joint1_values = 0;
+joint2_values = 0;
+joint3_values
 time_values = 0;
 
 hold on
-plot(time_values, joint_values);
+
+figure(1);
+plot(time_values, joint1_values, 'g');
+ylim([-1100 1100]);
 xlabel('Time (s)');
-ylabel('Base Joint Angle (encoder tics)');
-title('Base Joint PID Calibration');
+ylabel('Joint 1 Angle (encoder tics)');
+title('Joint 1 PID Calibration');
+
+figure(2);
+plot(time_values, joint2_values, 'g');
+ylim([-1100 1100]);
+xlabel('Time (s)');
+ylabel('Joint 2 Angle (encoder tics)');
+title('Joint 2 PID Calibration');
+
+figure(3);
+plot(time_values, joint3_values, 'g');
+ylim([-1100 1100]);
+xlabel('Time (s)');
+ylabel('Joint 3 Angle (encoder tics)');
+title('Joint 3 PID Calibration');
 
 last_time = 0;
 
@@ -50,10 +69,19 @@ for idx = 1:loop_iterations
     returnPacket = status(pp);
 %     disp(returnPacket);
     
-    joint_values = [joint_values, returnPacket(1)];
+    joint1_values = [joint1_values, returnPacket(1)];
+    joint2_values = [joint2_values, returnPacket(2)];
+    joint3_values = [joint3_values, returnPacket(3)];
     time_values = [time_values, current_time];
     
-    plot(time_values, joint_values);
+    figure(1);
+    plot(time_values, joint1_values, 'g');
+    drawnow;
+    figure(2);
+    plot(time_values, joint2_values, 'g');
+    drawnow;
+    figure(3);
+    plot(time_values, joint3_values, 'g');
     drawnow;
     
     elapsed = toc;
@@ -66,7 +94,6 @@ for idx = 1:loop_iterations
     
 %     last_time = current_time
 end
-
 
 
 % Clear up memory upon termination
