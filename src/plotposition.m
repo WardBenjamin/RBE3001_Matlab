@@ -33,15 +33,23 @@ loop_iterations = secondsToRecord * frequency;
 %% Plot Base joint angle
 joint_values = 0;
 time_values = 0;
+plot(time_values, joint_values);
+xlabel('Time (s)');
+ylabel('Base Joint Angle (encoder tics)');
+title('Base Joint PID Calibration');
 for idx = 1:loop_iterations
     returnPacket = status(pp);
-    joint_values = [joint_values, returnPacket(1)]
+    joint_values = [joint_values, returnPacket(1)];
     elapsed = toc;
-    time_values = [time_values, elapsed]
-    sleep_time = period - (elapsed - 1)
+    time_values = [time_values, elapsed];
+    sleep_time = period - (elapsed - 1);
+    plot(time_values, joint_values);
+    drawnow;
     java.lang.Thread.sleep(sleep_time * 1000);
     toc
 end
-% plot 
+
+
+
 % Clear up memory upon termination
 pp.shutdown()
