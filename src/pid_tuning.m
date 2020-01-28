@@ -60,6 +60,10 @@ pause(.1);
 calibration(pp, statusPacket);
 pause(.1);
 
+pid_config(pp, [.0005, .0001, 0], [.0005, .0001, 0], [.0005, .0001, 0])
+pause(.1);
+pid_config(pp, [.0005, .0001, 0], [.0005, .0001, 0], [.0005, .0001, 0])
+
 set_setpoint(pp, [0,0,0]);
 pause(.1);
 set_setpoint(pp, [500,200,0]);
