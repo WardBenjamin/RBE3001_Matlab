@@ -52,6 +52,7 @@ fclose(csvfile);
 %% Send calibration packet
 statusPacket = status(pp);
 calibration(pp, statusPacket);
+calibration(pp, statusPacket);
 statusPacket = status(pp);
 
 

@@ -19,13 +19,15 @@ function calibration(pp, status)
         pause(0.003); % Minimum amount of time required between write and read
 
         %pp.read reads a returned 15 float backet from the nucleo.
+        
         returnPacket = pp.read(SERV_ID);
+        
         toc
 
         if DEBUG
-            disp('Sent Packet:');
+            disp('Sent Packet1:');
             disp(packet);
-            disp('Received Packet:');
+            disp('Received Packet1:');
             disp(returnPacket);
         end
 
