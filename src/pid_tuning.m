@@ -26,7 +26,7 @@ myHIDSimplePacketComs.connect();
 % Create a PacketProcessor object to send data to the nucleo firmware
 pp = PacketProcessor(myHIDSimplePacketComs);
 
-secondsToRecord = 30;
+secondsToRecord = 4;
 frequency = 5;
 period = 1 / frequency; % 50 Hz
 loop_iterations = secondsToRecord * frequency;
@@ -59,15 +59,23 @@ calibration(pp, statusPacket);
 pause(.1);
 calibration(pp, statusPacket);
 pause(.1);
-
-pid_config(pp, [.0005, .0001, 0], [.0005, .0001, 0], [.0005, .0001, 0])
+statusPacket = status(pp);
 pause(.1);
-pid_config(pp, [.0005, .0001, 0], [.0005, .0001, 0], [.0005, .0001, 0])
+
+pid_config(pp, [.0005, .0001, 0], [.0009, .008, .1], [.0005, .0001, 0])
+pause(.1);
+pid_config(pp, [.0007, .0004, 0], [.0009, .008, .1], [.005, .0001, 0])
 
 set_setpoint(pp, [0,0,0]);
 pause(.1);
-set_setpoint(pp, [500,200,0]);
-pause(.1);
+set_setpoint(pp, [-162.75,479.25,17.00]);
+pause(4);
+set_setpoint(pp, [326.5,682.75,62.25]);
+pause(4);
+set_setpoint(pp, [417.00,701.75,806.50]);
+pause(4);
+set_setpoint(pp, [-341.25,407.75,-357.00]);
+pause(4);
 %set_setpoint(pp, [100,50,50]);
 %pause(.6);
 %set_setpoint(pp, [-300,200,150]);
@@ -114,6 +122,16 @@ for idx = 1:loop_iterations
 end
 
 fclose(csvfile);
+
+%Set setpoint to zero so robot doesent go haywire
+set_setpoint(pp, [0,200,0]);
+pause(.75);
+set_setpoint(pp, [0,100,0]);
+pause(.25);
+set_setpoint(pp, [0,50,0]);
+pause(.15);
+set_setpoint(pp, [0,0,0]);
+pause(.1);
 
 % Clear up memory upon termination
 pp.shutdown()

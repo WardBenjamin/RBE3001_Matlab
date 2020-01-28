@@ -46,7 +46,7 @@ fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,V
 for k=1:6 %% Revise maximum to number of datapoints to be recorded
     returnPacket=status(pp);
     fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket(1:6));
-    pause(0.1);
+    pause(.5);
 end
 fclose(csvfile);
 
@@ -55,7 +55,12 @@ statusPacket = status(pp);
 calibration(pp, statusPacket);
 calibration(pp, statusPacket);
 statusPacket = status(pp);
+statusPacket = status(pp);
+pid_config(pp, [.0007, .0004, 0], [.0009, .008, .1], [.005, .0001, 0])
+pid_config(pp, [.0007, .0004, 0], [.0009, .008, .1], [.005, .0001, 0])
 
+set_setpoint(pp, [0,0,0]);
+set_setpoint(pp, [0,0,0]);
 
 % Clear up memory upon termination
 pp.shutdown()
