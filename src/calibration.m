@@ -9,6 +9,7 @@ function calibration(pp, status)
         % bytes for this purpose. Recall that the HID interface supports
         % packet sizes up to 64 bytes.
         packet = status;
+        packet(15) = 1;
 
         tic
 

@@ -10,6 +10,7 @@ function returnPacket = status(pp)
         % bytes for this purpose. Recall that the HID interface supports
         % packet sizes up to 64 bytes.
         packet = zeros(15, 1, 'single');
+        packet(15) = 1;
 
         tic
 

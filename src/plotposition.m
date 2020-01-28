@@ -31,12 +31,13 @@ period = 1 / frequency; % 50 Hz
 loop_iterations = secondsToRecord * frequency;
 
 %% Plot Base joint angle
-joint_values = zeros(40, 1);
-time_values = zeros(40, 1);
+joint_values = 0;
+time_values = 0;
 for idx = 1:loop_iterations
     returnPacket = status(pp);
-    joint_values(idx) = returnPacket(1);
+    joint_values = [joint_values, returnPacket(1)]
     elapsed = toc;
+    time_values = [time_values, elapsed]
     sleep_time = period - (elapsed - 1)
     java.lang.Thread.sleep(sleep_time * 1000);
     toc
