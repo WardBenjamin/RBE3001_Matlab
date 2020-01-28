@@ -46,6 +46,7 @@ fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,V
 for k=1:6 %% Revise maximum to number of datapoints to be recorded
     returnPacket=status(pp);
     fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket(1:6));
+    pause(0.1);
 end
 fclose(csvfile);
 

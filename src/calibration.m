@@ -11,7 +11,7 @@ function calibration(pp, status)
         packet = status;
         packet(15) = 1;
 
-        tic
+%         tic
 
         % Send packet to the server and get the response
         %pp.write sends a 15 float packet to the micro controller
@@ -23,7 +23,7 @@ function calibration(pp, status)
         
         returnPacket = pp.read(SERV_ID);
         
-        toc
+%         toc
 
         if DEBUG
             disp('Sent Packet1:');
@@ -32,8 +32,8 @@ function calibration(pp, status)
             disp(returnPacket);
         end
 
-        toc
-        pause(1) %timeit(returnPacket) !FIXME why is this needed?
+%         toc
+%         pause(1) %timeit(returnPacket) !FIXME why is this needed?
 
 
     catch exception

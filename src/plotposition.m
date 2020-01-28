@@ -26,8 +26,8 @@ myHIDSimplePacketComs.connect();
 % Create a PacketProcessor object to send data to the nucleo firmware
 pp = PacketProcessor(myHIDSimplePacketComs);
 
-secondsToRecord = 10;
-frequency = 10;
+secondsToRecord = 30;
+frequency = 5;
 period = 1 / frequency; % 50 Hz
 loop_iterations = secondsToRecord * frequency;
 
@@ -48,6 +48,7 @@ for idx = 1:loop_iterations
     current_time = toc;
     
     returnPacket = status(pp);
+%     disp(returnPacket);
     
     joint_values = [joint_values, returnPacket(1)];
     time_values = [time_values, current_time];
@@ -57,6 +58,10 @@ for idx = 1:loop_iterations
     
     elapsed = toc;
     sleep_time = period - (elapsed - current_time)
+    if sleep_time < 0
+        sleep_time
+        sleep_time = 0;
+    end
     java.lang.Thread.sleep(sleep_time * 1000);
     
 %     last_time = current_time
