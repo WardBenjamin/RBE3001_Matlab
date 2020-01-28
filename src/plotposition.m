@@ -1,7 +1,7 @@
 clear
 clear java
 clear classes;
-
+clf
 
 addpath('../lib'); % Ensure that lib folder is on filepath
 
@@ -38,8 +38,9 @@ joint3_values = 0;
 time_values = 0;
 
 hold on
+grid on
 
-plot(time_values, joint1_values, 'r', joint2_values, 'g', joint3_values, 'b');
+plot(time_values, joint1_values, 'r', time_values, joint2_values, 'g', time_values, joint3_values, 'b');
 ylim([-1100 1100]);
 xlabel('Time (s)');
 ylabel('Joint Angle (encoder tics)');
@@ -59,7 +60,8 @@ for idx = 1:loop_iterations
     joint2_values = [joint2_values, returnPacket(2)];
     joint3_values = [joint3_values, returnPacket(3)];
     time_values = [time_values, current_time];
-    plot(time_values, joint1_values, 'r', joint2_values, 'g', joint3_values, 'b');
+    plot(time_values, joint1_values, 'r', time_values, joint2_values, 'g', time_values, joint3_values, 'b');
+    legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest');
     drawnow;
     
     elapsed = toc;
