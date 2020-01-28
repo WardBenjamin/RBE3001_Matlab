@@ -39,26 +39,12 @@ time_values = 0;
 
 hold on
 
-figure(1);
-plot(time_values, joint1_values, 'g');
+plot(time_values, joint1_values, 'r', joint2_values, 'g', joint3_values, 'b');
 ylim([-1100 1100]);
 xlabel('Time (s)');
-ylabel('Joint 1 Angle (encoder tics)');
-title('Joint 1 PID Calibration');
-
-figure(2);
-plot(time_values, joint2_values, 'g');
-ylim([-1100 1100]);
-xlabel('Time (s)');
-ylabel('Joint 2 Angle (encoder tics)');
-title('Joint 2 PID Calibration');
-
-figure(3);
-plot(time_values, joint3_values, 'g');
-ylim([-1100 1100]);
-xlabel('Time (s)');
-ylabel('Joint 3 Angle (encoder tics)');
-title('Joint 3 PID Calibration');
+ylabel('Joint Angle (encoder tics)');
+title('Joint PID Calibration');
+legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest');
 
 last_time = 0;
 
@@ -73,15 +59,7 @@ for idx = 1:loop_iterations
     joint2_values = [joint2_values, returnPacket(2)];
     joint3_values = [joint3_values, returnPacket(3)];
     time_values = [time_values, current_time];
-    
-    figure(1);
-    plot(time_values, joint1_values, 'g');
-    drawnow;
-    figure(2);
-    plot(time_values, joint2_values, 'g');
-    drawnow;
-    figure(3);
-    plot(time_values, joint3_values, 'g');
+    plot(time_values, joint1_values, 'r', joint2_values, 'g', joint3_values, 'b');
     drawnow;
     
     elapsed = toc;
