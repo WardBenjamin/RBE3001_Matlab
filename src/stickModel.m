@@ -11,11 +11,14 @@ function stickModel(theta_j1, theta_j2, theta_j3)
     p_3 = T(1:3,end);
     
     % Plot each link on a 3D plot
-    figure, hold on
+%     figure
+    
     plot3([p_0(1) p_1(1)], [p_0(2) p_1(2)], [p_0(3) p_1(3)], 'b', 'LineWidth', 2);
+    hold on
     plot3([p_1(1) p_2(1)], [p_1(2) p_2(2)], [p_1(3) p_2(3)], 'g', 'LineWidth', 2);
     plot3([p_2(1) p_3(1)], [p_2(2) p_3(2)], [p_2(3) p_3(3)], 'r', 'LineWidth', 2);
     grid on, axis equal, hold off
+    
     view(45,28);
     xlim([0 250]), ylim([-200 200]), zlim([-50 300]);
     xlabel('X [mm]'), ylabel('Y [mm]'), zlabel('Z [mm]');

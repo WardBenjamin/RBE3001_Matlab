@@ -25,19 +25,27 @@ myHIDSimplePacketComs.connect();
 % Create a PacketProcessor object to send data to the nucleo firmware
 pp = PacketProcessor(myHIDSimplePacketComs);
 
+%% Send calibration packet
+statusPacket = status(pp);
+pause(.1);
+statusPacket = status(pp);
+pause(.1);
+calibration(pp, statusPacket);
+pause(.1);
+calibration(pp, statusPacket);
+
 %% Run status command 6 times and record data in a .csv file with the timestamp as a name
 csvfile = fopen(sprintf('../logs/log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
 fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
-for k=1:11 %% Revise maximum to number of datapoints to be recorded
+for k=1:100 %% Revise maximum to number of datapoints to be recorded
     returnPacket=status(pp);
+    stickModel(-enc2rad(returnPacket(1)), -enc2rad(returnPacket(2)), -enc2rad(returnPacket(3)));
     fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket(1:11));
     pause(.5);
 end
 fclose(csvfile);
 
-%% Send calibration packet
-statusPacket = status(pp);
-statusPacket = status(pp);
+
 statusPacket = status(pp);
 statusPacket = status(pp);
 statusPacket = status(pp);
