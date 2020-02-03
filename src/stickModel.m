@@ -1,6 +1,11 @@
-function stickModel = stickModel(q, lastModel)
+function stickModel = stickModel(T, T1, T2, lastModel)
 
-    [T, T1, T2, T3] = fwkin3001(q(1), q(2), q(3));
+    % TODO: We can pass in fwkin in some places... potential speedup
+
+%     T = transform(1); 
+%     T1 = transform(2); 
+%     T2 = transform(3);
+    
     p_0 = [0 0 0];
     p_1 = T1(1:3,end);
     p_2 = T1*T2; p_2 = p_2(1:3,end);
@@ -42,16 +47,6 @@ function stickModel = stickModel(q, lastModel)
         lastModel(2).Matrix = T1;
         lastModel(3).Matrix = T1*T2;
 
-         % 	set(stickModel(1), 'Matrix', T);
-%     set(stickModel(2), 'Matrix', T1);
-%     set(stickModel(3), 'Matrix', T1*T2);
-    
-
-         %         plot3(stickModel(4), [p_0(1) p_1(1)], [p_0(2) p_1(2)], [p_0(3) p_1(3)], 'b', 'LineWidth', 2);
-%         hp2 = plot3([p_1(1) p_2(1)], [p_1(2) p_2(2)], [p_1(3) p_2(3)], 'g', 'LineWidth', 2);
-%         hp3 = plot3([p_2(1) p_3(1)], [p_2(2) p_3(2)], [p_2(3) p_3(3)], 'r', 'LineWidth', 2);
         stickModel = lastModel;
     end
-    
-%     hold off
 end
