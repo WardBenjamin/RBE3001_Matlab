@@ -36,16 +36,23 @@ pause(.1)
 calibration(pp, statusPacket);
 pause(.1);
 calibration(pp, statusPacket);
+
 statusPacket = status(pp);
 statusPacket = status(pp);
 statusPacket = status(pp);
 
+pid_config(pp, [.0007, .0004, 0], [.0009, .008, .1], [.005, .0001, 0])
+pid_config(pp, [.0007, .0004, 0], [.0009, .008, .1], [.005, .0001, 0])
+
+set_setpoint(pp, [0,0,0]);
+set_setpoint(pp, [0,0,0]);
+
 %% Define setpoints
-setpoints = [setpoint(0, [0 0 0]), setpoint(2, [0 0 0]), setpoint(4, [0 0 0])]; %TODO: Set to correct points
+setpoints = [setpoint(0, [0 0 0]), setpoint(3, [0 -1 .2]), setpoint(6, [0 -.4 -.5]), setpoint(9, [0 0 0])]; %TODO: Set to correct points
 curr_setpoint = setpoints(1);
 
 %% Set up timing
-secondsToRecord = 30;
+secondsToRecord = 15;
 frequency = 5;
 period = 1 / frequency; 
 loop_iterations = secondsToRecord * frequency;
@@ -97,10 +104,21 @@ for idx = 1:loop_iterations
     % Setpoint handling
     if current_time >= curr_setpoint.Time 
         % Execute the next setpoint if the current one has passed
-        if curr_setpoint.HasExecuted % This should never be true, but it's here to be safe
-            curr_setpoint = getNextSetpoint(setpoints);
+        if curr_setpoint.HasExecuted 
+            [setpoint_idx, next_setpoint] = setpoint.getNextSetpoint(setpoints);
+            
+            if current_time >= next_setpoint.Time
+                curr_setpoint = next_setpoint;
+            end
+            
+            if setpoint_idx == length(setpoints) + 1
+                % Stay at the last setpoint forever if we've run out of setpoints
+                curr_setpoint = setpoints(end); 
+            end
         end
-        set_setpoint(pp, curr_setpoint.execute());
+        rad_setpoint = curr_setpoint.execute();
+        enc_setpoint = [-rad2enc(rad_setpoint(1)), -rad2enc(rad_setpoint(2)), -rad2enc(rad_setpoint(3))];
+        set_setpoint(pp, enc_setpoint);
     end
 
     % Calculate the remaining loop time to sleep for
@@ -117,6 +135,8 @@ for idx = 1:loop_iterations
     % Sleep for the remaining loop time
     java.lang.Thread.sleep(sleep_time * 1000);
 end
+
+set_setpoint(pp, [0 0 0]);
 
 %% Close the csv file
 fclose(csvfile);

@@ -1,4 +1,4 @@
-classdef setpoint
+classdef setpoint < handle
     %SETPOINTS Position setpoint container
     %   Detailed explanation goes here
     
@@ -21,13 +21,15 @@ classdef setpoint
     end
     
     methods(Static)
-        function nextPoint = getNextSetpoint(setpoints)
+        function [n, nextPoint] = getNextSetpoint(setpoints)
             for n = 1:length(setpoints)
                 if ~(setpoints(n).HasExecuted)
                     nextPoint = setpoints(n);
-                    break
+                    return
                 end
             end
+            n = length(setpoints) + 1;
+            nextPoint = setpoints(end);
         end
     end
 end

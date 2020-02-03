@@ -1,7 +1,8 @@
 clear
 clear java
 clear classes;
-clf
+clear all;
+close all;
 
 addpath('../lib'); % Ensure that lib folder is on filepath
 
