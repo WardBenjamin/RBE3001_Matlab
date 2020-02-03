@@ -39,18 +39,27 @@ calibrate(pp, statusPacket);
 setpoints = [setpoint(0, [0 0 0]), setpoint(2, [0 0 0]), setpoint(4, [0 0 0])]; %TODO: Set to correct points
 curr_setpoint = setpoints(1);
 
-%% Set up data collection
-csvfile = fopen(sprintf('../logs/log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
-fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
-
 %% Set up timing
 secondsToRecord = 30;
 frequency = 5;
 period = 1 / frequency; 
 loop_iterations = secondsToRecord * frequency;
-tic
+
+%% Set up data collection
+csvfile = fopen(sprintf('../logs/log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
+fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
+times = zeroes(1, loop_iterations);
+joint1_values = zeroes(1, loop_iterations);
+joint2_values = zeroes(1, loop_iterations);
+joint3_values = zeroes(1, loop_iterations);
+effX_pos = zeroes(1, loop_iterations);
+effY_pos = zeroes(1, loop_iterations);
+effZ_pos = zeroes(1, loop_iterations);
 
 %% Collect data
+
+tic
+
 for idx = 1:loop_iterations  
     current_time = toc;
     
@@ -60,6 +69,13 @@ for idx = 1:loop_iterations
     [T, T1, T2, T3] = fwkin3001(returnPacket(1:3));
     fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', current_time,returnPacket(1:3),T(1:3,end));
 %     disp(returnPacket);
+    times(idx) = current_time;
+    joint1_values(idx) = returnPacket(1);
+    joint2_values(idx) = returnPacket(2);
+    joint3_values(idx) = returnPacket(3);
+    effX_pos = T(1,end);
+    effY_pos = T(2, end);
+    effZ_pos = T(3, end);
     
     if(curr_setpoint.Time > current_time) 
         curr_setpoint = getNextSetpoint(setpoints);
@@ -80,11 +96,40 @@ for idx = 1:loop_iterations
     java.lang.Thread.sleep(sleep_time * 1000);
 end
 
-%% Plot
-
-
 %% Close the csv file
 fclose(csvfile);
+
+%% Plot
+figure;
+grid on;
+plot(times, joint1_angle, 'r', times, joint2_angle, 'g', times, joint3_angle, 'b');
+xlabel('Time (s)');
+ylabel('Joint Angle (encoder tics)');
+title('Joint Angle vs Time: 2D Motion Planning');
+legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest');
+
+figure;
+grid on;
+plot(times, effX_pos, times, effZ_pos);
+xlabel('Time (s)');
+ylabel('Effector position (mm)');
+title('Effector Position vs Time: 2D Motion Planning');
+legend('X-Coordinate', 'Z-Coordinate', 'Location', 'SouthWest');
+
+figure;
+grid on;
+plot(times, diff(joint1_angle)/period, times, diff(joint2_angle)/period, times, diff(joint3_angle));
+xlabel('Time(s)');
+ylabel('Joint velocities (m/s)'); %%TODO: Is this m/s?
+title('Joint Velocity vs Time: 2D Motion Planning');
+legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest');
+
+figure;
+grid on;
+plot(effX_pos, effZ_Pos);
+hold on;
+plot(0, 0, '-o', 0, 0, '-o', 0, 0, '-o'); %% TODO: Add correct setpoints
+legend('Actual position', 'Setpoint 1', 'Setpoint 2', 'Setpoint 3', 'Location', 'SouthWest');
 
 % Clear up memory upon termination
 pp.shutdown()
