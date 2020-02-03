@@ -1,6 +1,8 @@
 clear
 clear java
 clear classes;
+clear all;
+close all;
 
 addpath('../lib'); % Ensure that lib folder is on filepath
 
@@ -25,6 +27,8 @@ myHIDSimplePacketComs.connect();
 % Create a PacketProcessor object to send data to the nucleo firmware
 pp = PacketProcessor(myHIDSimplePacketComs);
 
+
+%% Calibrate
 statusPacket = status(pp);
 pause(.1)
 statusPacket = status(pp);
@@ -32,58 +36,103 @@ pause(.1)
 calibrate(pp, statusPacket);
 puase(.1);
 calibrate(pp, statusPacket);
-
-ai = [zeros(1, 3), zeros(1, 3), zeros(1, 3)];
-tf = 5; %% Number of seconds
-thetaf = [pi/4, pi/2, pi/2]; %% Angle setpoint in radians
-steps = 30; %% Number of steps to take to reach trajectory
-
 statusPacket = status(pp);
-vi = statusPacket(4:6);
-thetai = statusPacket(1:3);
-for i = 1:3
-    ai(i) = CuPolSolve(0, tf, vi(i), 0, thetai(i), thetaf(i));
+statusPacket = status(pp);
+statusPacket = status(pp);
+
+%% Define setpoints
+setpoints = [setpoint(0, [enc2rad(statusPacket(1)), enc2rad(statusPacket(2)), enc2rad(statusPacket(3))]), ...
+    setpoint(0, [0 0 0]), setpoint(2, [0 0 0]), setpoint(4, [0 0 0])];
+    %%TODO: Should the first setpoints be -enc2rad?
+
+%% Set Up Timing
+secondsToRecord = 15; %TODO: Define appropreiate length
+steps = 30; %TODO: Define number of steps
+t_intervals = linspace(0, secondsToRecord, steps);
+frequency = 5;
+period = 1 / frequency;
+loop_iterations = secondsToRecord * frequency;
+    
+%% Set Up Trajectory Plans
+ai = [zeros(1, 4), zeros(1, 4), zeros(1, 4); zeros(1, 4), zeros(1, 4), zeros(1, 4); zeros(1, 4), zeros(1, 4), zeros(1, 4)];
+vi = 0;
+vf = 0;
+
+for s = 1:3 % Iterate through setpoints
+    ti = setpoints(s).Time;
+    tf = setpoints(s+1).Time;
+    thetai=setpoints(s).Position;
+    thetaf=setpoints(s+1).Position;
+    for a = 1:3 % Iterate through axes
+        ai(s,a)= CuPolSolve(ti, tf, vi, vf, thetai(a), thetaf(a));
+    end
 end
 
-% t_intervals = linspace(, tf,  steps + 1);
-% 
-% for i = 1:steps
+%% Create Trajectory Setpoints
+setpoints = setpoints(1);
+q = zeros(1,3);
+% Setpoint 1
+for t = t_intervals(2):t_intervals(10)
+    for a = 1:3 % Iterate through axes
+       q(a) = ai(a, 1) + ai(a, 2) * t + ai(a, 3) * t^2 + ai(a, 4) * t^3;
+    end
+    setpoints = [setpoints, setpoint(t, [q(1), q(2), q(3)])];
+end
     
-%% Run status command 6 times and record data in a .csv file with the timestamp as a name
-joint1_velocities = zeroes(1, steps);
-joint2_velocities = zeroes(1, steps);
-joint3_velocities = zeroes(1, steps);
-
-joint1_values = zeroes(1, steps);
-joint2_values = zeroes(1, steps);
-joint3_values = zeroes(1, steps);
-
-time_values = zeroes(1, steps);
-
+%% Set up data collection
 csvfile = fopen(sprintf('../logs/log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
 fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
 
+times = zeros(1, loop_iterations);
+
+joint1_values = zeros(1, loop_iterations);
+joint2_values = zeros(1, loop_iterations);
+joint3_values = zeros(1, loop_iterations);
+
+effX_pos = zeros(1, loop_iterations);
+effY_pos = zeros(1, loop_iterations);
+effZ_pos = zeros(1, loop_iterations);
+
+model = stickModel(eye(4), eye(4), eye(4), []);
+
+%% Collect data
 tic
-for k=1:steps %% Revise maximum to number of datapoints to be recorded
+for k=1:loop_iterations %% Revise maximum to number of datapoints to be recorded
     current_time = toc;
-    returnPacket=status(pp);
-    fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket(1:6));
     
-    joint1_values(k) = returnPacket(1);
-    joint2_values(k) = returnPacket(2);
-    joint3_values(k) = returnPacket(3);
+    % Get the newest status packet
+    returnPacket = status(pp);
     
-    joint1_velocities(k) = returnPacket(4);
-    joint2_velocities(k) = returnPacket(5);
-    joint3_velocities(k) = returnPacket(6);
+    % Calculate forward kinematics
+    [T, T1, T2, T3] = fwkin3001([-enc2rad(returnPacket(1)) -enc2rad(returnPacket(2)) -enc2rad(returnPacket(3))]);
     
-    time_values(k) = current_time;
+    % Log data to file
+    fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', current_time,returnPacket(1:3),T(1:3,end));
     
-    set_setpoint(q(1, k), q(2, k), q(3, k));
+    % Display stick model
+    stickModel(T, T1, T2, model);
+
+    % Store current values in log matrices
+    times(idx) = current_time;
+    joint1_values(idx) = -enc2rad(returnPacket(1));
+    joint2_values(idx) = -enc2rad(returnPacket(2));
+    joint3_values(idx) = -enc2rad(returnPacket(3));
+    effX_pos(idx) = T(1, end);
+    effY_pos(idx) = T(2, end);
+    effZ_pos(idx) = T(3, end);
     
+    % Setpoint handling
+    if current_time >= curr_setpoint.Time 
+        % Execute the next setpoint if the current one has passed
+        if curr_setpoint.HasExecuted % This should never be true, but it's here to be safe
+            curr_setpoint = getNextSetpoint(setpoints);
+        end
+        set_setpoint(pp, curr_setpoint.execute());
+    end
+
     % Calculate the remaining loop time to sleep for
     elapsed = toc;
-    sleep_time = t_intervals(k) - toc;
+    sleep_time = period - (elapsed - current_time);
     
     % If the loop iteration has run over (rare), don't sleep
     % Haha we're tired and this does the job!
@@ -96,23 +145,57 @@ for k=1:steps %% Revise maximum to number of datapoints to be recorded
     java.lang.Thread.sleep(sleep_time * 1000);
 end
 
-hold on
-grid on
 
-f1 = figure1;
-plot(time_values, joint1_values, 'r', time_values, joint2_values, 'g', time_values, joint3_values, 'b');
-ylim([-1100 1100]);
-xlabel('Time (s)');
-ylabel('Joint Angle (encoder tics)');
-title('Joint Angles');
-legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest');
-
-f2 = figure2;
-plot(time_values, joint1_velocities, 'r', time_values, joint2_velocities, 'g', time_values, joint3_velocities, 'b');
-ylim([-1100 1100]);
-xlabel('Time (s)');
-ylabel('Joint Velocity (m/s)');
-title('Joint Velocities');
-legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest');
-
+%% Close the csv file
 fclose(csvfile);
+
+%% Plot
+figure(2);
+grid on;
+
+plot(times, joint1_values, 'r', times, joint2_values, 'g', times, joint3_values, 'b');
+ylim([-pi, pi]);
+
+xlabel('Time (s)');
+ylabel('Joint Angle (rad)');
+title('Joint Angle vs Time: 2D Motion Planning');
+legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest');
+
+figure(3);
+grid on;
+
+plot(times, effX_pos, times, effZ_pos);
+ylim([-50, 350]);
+
+xlabel('Time (s)');
+ylabel('Effector position (mm)');
+title('Effector Position vs Time: 2D Motion Planning');
+legend('X-Coordinate', 'Z-Coordinate', 'Location', 'SouthWest');
+
+figure(4);
+grid on;
+
+plot(times(1:end-1), diff(joint1_values)/period, times(1:end-1), diff(joint2_values)/period, times(1:end-1), diff(joint3_values));
+ylim([-2.5, 2.5]);
+xlabel('Time(s)');
+ylabel('Joint velocities (rad/s)');
+title('Joint Velocity vs Time: 2D Motion Planning');
+legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest');
+
+figure(5);
+grid on;
+
+plot(effX_pos, effZ_pos);
+xlim([0, 350]);
+ylim([-50, 250]);
+
+hold on;
+plot(0, 0, '-o', 0, 0, '-o', 0, 0, '-o'); %% TODO: Add correct setpoints
+
+xlabel('X position (mm)');
+ylabel('Z position (mm)');
+title('X-Z Plane position: 2D Motion Planning');
+legend('Actual position', 'Setpoint 1', 'Setpoint 2', 'Setpoint 3', 'Location', 'NorthWest');
+
+% Clear up memory upon termination
+pp.shutdown()
