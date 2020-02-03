@@ -1,10 +1,6 @@
-function stickModel = stickModel(theta_j1, theta_j2, theta_j3, lastModel)
-%     p_0 = [0, 0, 0]; % Position of joint 0, defined as origin
-%     p_1 = [0, 0, 135]; % Position of joint 1
-%     p_2 = getJ3Pos(theta_j1, theta_j2, theta_j3); % Position of joint 2
-%     p_3 = fwkin3001(theta_j1, theta_j2, theta_j3); % Position of effector
+function stickModel = stickModel(q, lastModel)
 
-    [T, T1, T2, T3] = fwkin3001(theta_j1, theta_j2, theta_j3);
+    [T, T1, T2, T3] = fwkin3001(q(1), q(2), q(3));
     p_0 = [0 0 0];
     p_1 = T1(1:3,end);
     p_2 = T1*T2; p_2 = p_2(1:3,end);
@@ -14,9 +10,6 @@ function stickModel = stickModel(theta_j1, theta_j2, theta_j3, lastModel)
     figure(1);
     
     hold on;
-%     cla;
-   
-%     axis equal;  
   
     if isempty(lastModel)
         hp1 = plot3([p_0(1) p_1(1)], [p_0(2) p_1(2)], [p_0(3) p_1(3)], 'b', 'LineWidth', 2);

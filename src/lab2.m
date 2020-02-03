@@ -45,20 +45,58 @@ for k=1:10000 %% Revise maximum to number of datapoints to be recorded
     fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket(1:11));
 %     pause(.5);
 end
+
+setpoints = [setpoint(0, [0,0,0]) setpoint(2, [0,0,0])];
+
+setpoints(1).execute()
+
+tic
+for idx = 1:loop_iterations  
+    current_time = toc;
+    
+    nextPoint = setpoint.nextPoint(setpoints);
+    if current_time >= nextPoint.Time
+        position = nextPoint.execute();
+        % Actually send the position here
+    end
+    
+    returnPacket = status(pp);
+    fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket(1:6));
+
+    % Add the joint values to the range sets
+    joint1_values = [joint1_values, returnPacket(1)];
+    joint2_values = [joint2_values, returnPacket(2)];
+    joint3_values = [joint3_values, returnPacket(3)];
+    
+    % Add the current time to the domain
+    time_values = [time_values, current_time];
+    
+    % Plot all data
+    plot(time_values, joint1_values, 'r', time_values, joint2_values, 'g', time_values, joint3_values, 'b');
+    
+    % This is unfortunate (since it's slow) but required (legend is randomly numbered otherwise)
+    legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest'); 
+    
+    % Draw the plot on the current graph figure
+    drawnow;
+    
+    % Calculate the remaining loop time to sleep for
+    elapsed = toc;
+    sleep_time = period - (elapsed - current_time)
+    
+    % If the loop iteration has run over (rare), don't sleep
+    % Haha we're tired and this does the job!
+    if sleep_time < 0
+        sleep_time;
+        sleep_time = 0;
+    end
+    
+    % Sleep for the remaining loop time
+    java.lang.Thread.sleep(sleep_time * 1000);
+end
+
+
 fclose(csvfile);
-
-
-statusPacket = status(pp);
-statusPacket = status(pp);
-statusPacket = status(pp);
-statusPacket = status(pp);
-statusPacket = status(pp);
-statusPacket = status(pp);
-statusPacket = status(pp);
-statusPacket = status(pp);
-statusPacket = status(pp);
-
-%Encoder1: 9.7666666667	Encoder2: 18.8125	Encoder3: -10.2064393939
 
 
 % Clear up memory upon termination
