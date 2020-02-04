@@ -33,50 +33,67 @@ statusPacket = status(pp);
 pause(.1)
 statusPacket = status(pp);
 pause(.1)
-calibrate(pp, statusPacket);
-puase(.1);
-calibrate(pp, statusPacket);
+calibration(pp, statusPacket);
+pause(.1);
+calibration(pp, statusPacket);
 statusPacket = status(pp);
 statusPacket = status(pp);
 statusPacket = status(pp);
 
 %% Define setpoints
-setpoints = [setpoint(0, [enc2rad(statusPacket(1)), enc2rad(statusPacket(2)), enc2rad(statusPacket(3))]), ...
-    setpoint(0, [0 0 0]), setpoint(2, [0 0 0]), setpoint(4, [0 0 0])];
-    %%TODO: Should the first setpoints be -enc2rad?
+setpoints = [setpoint(0, [0 0 0]), ...
+    setpoint(3, [0 -1 .2]), setpoint(6, [0 -.4 -.5]), setpoint(9, [0 0 0])];
 
+    
 %% Set Up Timing
 secondsToRecord = 15; %TODO: Define appropreiate length
 steps = 30; %TODO: Define number of steps
-t_intervals = linspace(0, secondsToRecord, steps);
+% t_intervals = linspace(0, secondsToRecord, steps);
 frequency = 5;
 period = 1 / frequency;
 loop_iterations = secondsToRecord * frequency;
     
 %% Set Up Trajectory Plans
-ai = [zeros(1, 4), zeros(1, 4), zeros(1, 4); zeros(1, 4), zeros(1, 4), zeros(1, 4); zeros(1, 4), zeros(1, 4), zeros(1, 4)];
+ai = zeros(3, (length(setpoints) - 1) * 4);
 vi = 0;
 vf = 0;
 
-for s = 1:3 % Iterate through setpoints
+for s = 1:(length(setpoints) - 1) % Iterate through setpoints
     ti = setpoints(s).Time;
     tf = setpoints(s+1).Time;
     thetai=setpoints(s).Position;
     thetaf=setpoints(s+1).Position;
     for a = 1:3 % Iterate through axes
-        ai(s,a)= CuPolSolve(ti, tf, vi, vf, thetai(a), thetaf(a));
+        cubic = CuPolSolve(ti, tf, vi, vf, thetai(a), thetaf(a))
+        indices = sub2ind(size(ai), [s s s s], [(a-1)*4+1 (a-1)*4+2 (a-1)*4+3 (a-1)*4+4]);
+        ai(indices) = cubic;
     end
 end
 
 %% Create Trajectory Setpoints
-setpoints = setpoints(1);
+
+full_trajectory = setpoints(1);
 q = zeros(1,3);
-% Setpoint 1
-for t = t_intervals(2):t_intervals(10)
-    for a = 1:3 % Iterate through axes
-       q(a) = ai(a, 1) + ai(a, 2) * t + ai(a, 3) * t^2 + ai(a, 4) * t^3;
+
+for s = 1:(length(setpoints) - 1)
+    current_setpoint = setpoints(s);
+    next_setpoint = setpoints(s+1);
+    
+    steps = 12;
+    time_span = next_setpoint.Time - current_setpoint.Time;
+    %% TODO: Can the robot actually process 5 setpoints per second? - Laks
+    if time_span > 2
+        % If the trajectory will generate less than 5 setpoints per second,
+        % generate additional setpoints
+        steps = time_span * (steps / 2);
     end
-    setpoints = [setpoints, setpoint(t, [q(1), q(2), q(3)])];
+    
+    for t = linspace(current_setpoint.Time, next_setpoint.Time, steps)
+        for a = 1:3 % Iterate through axes
+            q(a) = ai(s, (a-1)*4+1) + ai(s, (a-1)*4+2) * t + ai(s, (a-1)*4+3) * t^2 + ai(s, (a-1)*4+4) * t^3;
+        end
+        full_trajectory = [full_trajectory, setpoint(t, [q(1), q(2), q(3)])];
+    end
 end
     
 %% Set up data collection
@@ -95,9 +112,11 @@ effZ_pos = zeros(1, loop_iterations);
 
 model = stickModel(eye(4), eye(4), eye(4), []);
 
+curr_setpoint = full_trajectory(1);
+
 %% Collect data
 tic
-for k=1:loop_iterations %% Revise maximum to number of datapoints to be recorded
+for idx = 1:loop_iterations %% Revise maximum to number of datapoints to be recorded
     current_time = toc;
     
     % Get the newest status packet
@@ -124,10 +143,21 @@ for k=1:loop_iterations %% Revise maximum to number of datapoints to be recorded
     % Setpoint handling
     if current_time >= curr_setpoint.Time 
         % Execute the next setpoint if the current one has passed
-        if curr_setpoint.HasExecuted % This should never be true, but it's here to be safe
-            curr_setpoint = getNextSetpoint(setpoints);
+        if curr_setpoint.HasExecuted 
+            [setpoint_idx, next_setpoint] = setpoint.getNextSetpoint(full_trajectory);
+            
+            if current_time >= next_setpoint.Time
+                curr_setpoint = next_setpoint;
+            end
+            
+            if setpoint_idx == length(full_trajectory) + 1
+                % Stay at the last setpoint forever if we've run out of setpoints
+                curr_setpoint = full_trajectory(end); 
+            end
         end
-        set_setpoint(pp, curr_setpoint.execute());
+        rad_setpoint = curr_setpoint.execute();
+        enc_setpoint = [-rad2enc(rad_setpoint(1)), -rad2enc(rad_setpoint(2)), -rad2enc(rad_setpoint(3))];
+        set_setpoint(pp, enc_setpoint);
     end
 
     % Calculate the remaining loop time to sleep for
@@ -185,17 +215,38 @@ legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest');
 figure(5);
 grid on;
 
-plot(effX_pos, effZ_pos);
+traj_x = [];
+traj_z = [];
+
+for s = 1:length(full_trajectory)
+    sT = fwkin3001(full_trajectory(s).Position);
+    traj_x = [traj_x, sT(1,end)];
+    traj_z = [traj_z, sT(3,end)];
+end
+
+plot(traj_x, traj_z, '.g')
+
+hold on;
+
+plot(effX_pos, effZ_pos, 'b');
 xlim([0, 350]);
 ylim([-50, 250]);
 
-hold on;
-plot(0, 0, '-o', 0, 0, '-o', 0, 0, '-o'); %% TODO: Add correct setpoints
+setpoint_x = [];
+setpoint_z = [];
+
+for s = 1:length(setpoints)
+    sT = fwkin3001(setpoints(s).Position);
+    setpoint_x = [setpoint_x, sT(1,end)];
+    setpoint_z = [setpoint_z, sT(3,end)];
+end
+
+plot(setpoint_x, setpoint_z, 'or')
 
 xlabel('X position (mm)');
 ylabel('Z position (mm)');
 title('X-Z Plane position: 2D Motion Planning');
-legend('Actual position', 'Setpoint 1', 'Setpoint 2', 'Setpoint 3', 'Location', 'NorthWest');
+legend('Trajectory points', 'Setpoints', 'Actual position', 'Location', 'NorthWest');
 
 % Clear up memory upon termination
 pp.shutdown()
