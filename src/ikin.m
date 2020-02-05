@@ -4,7 +4,7 @@ function [theta1, theta2, theta3] = ikin(x, y, z)
     r = sqrt(x^2 + y^2);
     s = z - L(1);
     %theta1 = pi + atan2(y,x);
-    theta3 = (L(2)^2 + L(3)^2 - (r^2 + z^2))/(2*L(2)*L(3));
-    theta2 = atan((s - L(3) * sin(theta3)) / r);
+    theta3 = acos(-(L(2)^2 + L(3)^2 - (r^2 + s^2))/(2*L(2)*L(3)))+pi/2;
+    theta2 = atan((s + L(3) * tan(pi/2-theta3)) / r);
     theta1 = atan2(y,x);
 end
