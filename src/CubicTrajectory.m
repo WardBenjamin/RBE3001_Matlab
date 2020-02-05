@@ -40,6 +40,9 @@ statusPacket = status(pp);
 statusPacket = status(pp);
 statusPacket = status(pp);
 
+pid_config(pp, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
+pid_config(pp, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
+
 %% Define setpoints
 setpoints = [setpoint(0, [0 0 0]), ...
     setpoint(3, [0 -1 .2]), setpoint(6, [0 -.4 -.5]), setpoint(9, [0 0 0])];
