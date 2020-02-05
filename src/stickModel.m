@@ -22,6 +22,7 @@ function stickModel = stickModel(T, T1, T2, lastModel)
         hp3 = plot3([p_2(1) p_3(1)], [p_2(2) p_3(2)], [p_2(3) p_3(3)], 'r', 'LineWidth', 2);
         grid on;
         view(45,28);
+        axis equal;
         xlim([-50 300]), ylim([-250 250]), zlim([-100 400]);
         xlabel('X [mm]');
         ylabel('Y [mm]');

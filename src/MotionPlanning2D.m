@@ -84,7 +84,7 @@ for idx = 1:loop_iterations
     returnPacket = status(pp);
     
     % Calculate forward kinematics
-    [T, T1, T2, T3] = fwkin3001([-enc2rad(returnPacket(1)) -enc2rad(returnPacket(2)) -enc2rad(returnPacket(3))]);
+    [T, T1, T2, ~] = fwkin3001([-enc2rad(returnPacket(1)) -enc2rad(returnPacket(2)) -enc2rad(returnPacket(3))]);
     
     % Log data to file
     fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', current_time,returnPacket(1:3),T(1:3,end));
@@ -182,7 +182,14 @@ xlim([0, 350]);
 ylim([-50, 250]);
 
 hold on;
-plot(0, 0, '-o', 0, 0, '-o', 0, 0, '-o'); %% TODO: Add correct setpoints
+
+% TODO: Do we need to do fwkin for setpoints to get the xz-plane positions
+% of each?
+[s1T, ~, ~, ~] = fwkin3001(setpoints(1).Position);
+[s2T, ~, ~, ~] = fwkin3001(setpoints(2).Position);
+[s3T, ~, ~, ~] = fwkin3001(setpoints(3).Position);
+
+plot(s1T(1,end), s1T(3,end), '-o', s2T(1,end), s2T(3,end), '-o', s3T(1,end), s3T(3,end), '-o'); %% TODO: Add correct setpoints
 
 xlabel('X position (mm)');
 ylabel('Z position (mm)');
