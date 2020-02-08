@@ -1,10 +1,34 @@
-function [theta1, theta2, theta3] = ikin(x, y, z)
+function q = ikin(p)
     L = [135, 175, 169.28]; %Lengths of links
+    
+    x = p(1);
+    y = p(2);
+    z = p(3);
 
-    r = sqrt(x^2 + y^2);
-    s = z - L(1);
-    %theta1 = pi + atan2(y,x);
-    theta3 = acos(-(L(2)^2 + L(3)^2 - (r^2 + s^2))/(2*L(2)*L(3)))+pi/2;
-    theta2 = atan((s + L(3) * tan(pi/2-theta3)) / r);
+%     r = sqrt(x^2 + y^2);
+%     s = z - L(1);
+%     %theta1 = pi + atan2(y,x);
+%     theta3_numerator = (L(2)^2 + L(3)^2 - (r^2 + s^2));
+%     theta3_denominator = (L(2) * L(3));
+%     theta3 = acos(-theta3_numerator / theta3_denominator) + pi/2;
+%     theta2 = atan((s + L(3) * tan(pi/2 - theta3)) / r);
+    
     theta1 = atan2(y,x);
+    
+    a_sq = x^2 + (z - L(1))^2;
+    a = sqrt(a_sq);
+    
+    theta3_n = L(2)^2 + L(3)^2 - a_sq;
+    theta3_d = 2 * L(2) * L(3);
+    theta3 = acos(theta3_n / theta3_d) - pi/2;
+    
+    alpha = atan2((z - L(1)), x);
+    
+    beta_n = a_sq + L(2)^2 - L(3)^2;
+    beta_d = 2 * a * L(2);
+    beta = acos(beta_n / beta_d);
+    
+    theta2 = alpha + beta;
+    
+    q = [theta1 theta2 theta3];
 end
