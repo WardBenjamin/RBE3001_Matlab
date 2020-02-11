@@ -4,7 +4,7 @@ function returnPacket = status(pp)
         % the Nucleo
 
        
-        DEBUG   = true;          % enables/disables debug prints
+%         DEBUG   = false;          % enables/disables debug prints
 
         % Instantiate a packet - the following instruction allocates 64
         % bytes for this purpose. Recall that the HID interface supports
@@ -24,12 +24,12 @@ function returnPacket = status(pp)
         returnPacket = pp.read(SERV_ID);
 %         toc;
 
-        if DEBUG
-            disp('Sent Packet:');
-            disp(packet);
-            disp('Received Packet:');
-            disp(returnPacket);
-        end
+%         if DEBUG
+%             disp('Sent Packet:');
+%             disp(packet);
+%             disp('Received Packet:');
+%             disp(returnPacket);
+%         end
 
 %         toc;
 %         pause(1) %timeit(returnPacket) !FIXME why is this needed?

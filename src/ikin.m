@@ -15,20 +15,20 @@ function q = ikin(p)
     
     theta1 = atan2(y,x);
     
-    a_sq = x^2 + (z - L(1))^2;
-    a = sqrt(a_sq);
+    a = x^2 + y^2 + (z - L(1))^2;
     
-    theta3_n = L(2)^2 + L(3)^2 - a_sq;
+    theta3_n = L(2)^2 + L(3)^2 - a;
     theta3_d = 2 * L(2) * L(3);
-    theta3 = acos(theta3_n / theta3_d) - pi/2;
+    theta3 = -(acos(theta3_n / theta3_d) - pi/2);
     
-    alpha = atan2((z - L(1)), x);
+     alpha = atan2((z - L(1)), sqrt(x^2 + y^2));
+%     alpha = asin((z - L(1)) / a);
     
-    beta_n = a_sq + L(2)^2 - L(3)^2;
-    beta_d = 2 * a * L(2);
+    beta_n = L(2)^2 + a - L(3)^2;
+    beta_d = 2 * L(2) * sqrt(a);
     beta = acos(beta_n / beta_d);
     
-    theta2 = alpha + beta;
+    theta2 = -(alpha + beta);
     
     q = [theta1 theta2 theta3];
 end

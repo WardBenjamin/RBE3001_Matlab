@@ -1,10 +1,14 @@
-function kintest(enc)
+function q = kintest(enc)
 
-    rad = enc2rad([-enc(1), enc(2), enc(3)])
+    rad = enc2rad([enc(1), enc(2), enc(3)])
 
-    [T, ~] = fwkin3001(-enc2rad(enc));
+    [T, T1, T2, ~] = fwkin3001(-rad);
+    
+    stickModel(T, T1, T2, []);
     
     fw = T(1:3,end).'
     
     q = ikin(fw)
+    
+    stickModelRad(q);
 end

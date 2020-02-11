@@ -27,7 +27,7 @@ function stickModel = stickModel(T, T1, T2, lastModel)
         xlabel('X [mm]');
         ylabel('Y [mm]');
         zlabel('Z [mm]');
-        title('Stick Model of the RBE 3001 robot');
+        title('Stick Model');
         stickModel = [triad('Scale', 30, 'LineWidth', 1, 'Matrix', T) triad('Scale', 30, 'LineWidth', 1, 'Matrix', T1) triad('Scale', 30, 'LineWidth', 1, 'Matrix', T1*T2), hp1, hp2, hp3];
         
         % Triads print a TON of warnings without turning these two types off

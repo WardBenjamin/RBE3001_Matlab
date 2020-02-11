@@ -29,4 +29,16 @@ myHIDSimplePacketComs.connect();
 % Create a PacketProcessor object to send data to the nucleo firmware
 coms = PacketProcessor(myHIDSimplePacketComs);
 
+%% Calibrate
+status(coms);
+pause(.1)
+statusPacket = status(coms);
+pause(.1)
+calibration(coms, statusPacket);
+pause(.1);
+calibration(coms, statusPacket);
+status(coms);
+status(coms);
+status(coms);
+
 end
