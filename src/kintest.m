@@ -6,5 +6,5 @@ function kintest(enc)
     
     fw = T(1:3,end).'
     
-    p = ikin(fw)
+    q = ikin(fw)
 end
