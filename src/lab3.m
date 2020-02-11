@@ -9,14 +9,14 @@ times = zeros(loop_iterations, 1);
 %% Collect data
 for idx = 1:loop_iterations %% Revise maximum to number of datapoints to be recorded
     tic;
-    
-    % Get the newest status packet
-    returnPacket = status(coms);
-    
-    current_time = toc;
-   
+
+    coms.write(3, zeros(15, 1, 'single'));
+
+    pause(0.003); % Minimum amount of time required between write and read
+    coms.read(3);
+
     % Store current values in log matrices
-    times(idx) = current_time;
+    times(idx) = toc;
 end
 
 %% Plot
