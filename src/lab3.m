@@ -43,71 +43,25 @@ statusPacket = status(pp);
 pid_config(pp, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
 pid_config(pp, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
 
-%% Define setpoints
-
-arbitraryPosition1 = [45  0  -20];
-
-arbitraryPosition2 = [15  0  30 ];
-
-testPoint1 = ikin(arbitraryPosition1)
-
-testPoint2 = ikin(arbitraryPosition2)
-
-setpoints = [setpoint(0, [0 0 0]), ...
-    setpoint(4, [testPoint1(1) testPoint1(2) testPoint1(3)]), setpoint(8, [testPoint2(1) testPoint2(2) testPoint2(3)]), setpoint(12, [0 0 0])];
-
-    
 %% Set Up Timing
-secondsToRecord = 15; %TODO: Define appropreiate length
-steps = 30; %TODO: Define number of steps
-% t_intervals = linspace(0, secondsToRecord, steps);
+secondsToRecord = 5;
 frequency = 5;
 period = 1 / frequency;
 loop_iterations = secondsToRecord * frequency;
-    
-%% Set Up Trajectory Plans
-ai = zeros(3, (length(setpoints) - 1) * 4);
-vi = 0;
-vf = 0;
 
-for s = 1:(length(setpoints) - 1) % Iterate through setpoints
-    ti = setpoints(s).Time;
-    tf = setpoints(s+1).Time;
-    thetai=setpoints(s).Position;
-    thetaf=setpoints(s+1).Position;
-    for a = 1:3 % Iterate through axes
-        cubic = CuPolSolve(ti, tf, vi, vf, thetai(a), thetaf(a))
-        indices = sub2ind(size(ai), [s s s s], [(a-1)*4+1 (a-1)*4+2 (a-1)*4+3 (a-1)*4+4]);
-        ai(indices) = cubic;
-    end
-end
+%% Run Test Point 1
 
-%% Create Trajectory Setpoints
+%% Define setpoints
 
-full_trajectory = setpoints(1);
-q = zeros(1,3);
+arbitraryPosition1 = [200  50  -20];
 
-for s = 1:(length(setpoints) - 1)
-    current_setpoint = setpoints(s);
-    next_setpoint = setpoints(s+1);
+testPoint1 = ikin(arbitraryPosition1)
+
+setpoints = [setpoint(0, [0 0 0]), ...
+    setpoint(2, rad2enc([testPoint1(1) testPoint1(2) testPoint1(3)])), setpoint(4,[0,0,0])];
+
     
-    steps = 12;
-    time_span = next_setpoint.Time - current_setpoint.Time;
-    %% TODO: Can the robot actually process 5 setpoints per second? - Laks
-    if time_span > 2
-        % If the trajectory will generate less than 5 setpoints per second,
-        % generate additional setpoints
-        steps = time_span * (steps / 2);
-    end
-    
-    for t = linspace(current_setpoint.Time, next_setpoint.Time, steps)
-        for a = 1:3 % Iterate through axes
-            q(a) = ai(s, (a-1)*4+1) + ai(s, (a-1)*4+2) * t + ai(s, (a-1)*4+3) * t^2 + ai(s, (a-1)*4+4) * t^3;
-        end
-        full_trajectory = [full_trajectory, setpoint(t, [q(1), q(2), q(3)])];
-    end
-end
-    
+
 %% Set up data collection
 csvfile = fopen(sprintf('../logs/log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
 fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
@@ -124,7 +78,7 @@ effZ_pos = zeros(1, loop_iterations);
 
 model = stickModel(eye(4), eye(4), eye(4), []);
 
-curr_setpoint = full_trajectory(1);
+curr_setpoint = setpoints(1);
 
 %% Collect data
 tic
@@ -156,15 +110,15 @@ for idx = 1:loop_iterations %% Revise maximum to number of datapoints to be reco
     if current_time >= curr_setpoint.Time 
         % Execute the next setpoint if the current one has passed
         if curr_setpoint.HasExecuted 
-            [setpoint_idx, next_setpoint] = setpoint.getNextSetpoint(full_trajectory);
+            [setpoint_idx, next_setpoint] = setpoint.getNextSetpoint(setpoints);
             
             if current_time >= next_setpoint.Time
                 curr_setpoint = next_setpoint;
             end
             
-            if setpoint_idx == length(full_trajectory) + 1
+            if setpoint_idx == length(setpoints) + 1
                 % Stay at the last setpoint forever if we've run out of setpoints
-                curr_setpoint = full_trajectory(end); 
+                curr_setpoint = setpoints(end); 
             end
         end
         rad_setpoint = curr_setpoint.execute();
@@ -200,7 +154,7 @@ ylim([-pi, pi]);
 
 xlabel('Time (s)');
 ylabel('Joint Angle (rad)');
-title('Joint Angle vs Time: 2D Motion Planning');
+title('Joint Angle vs Time: Inverse Kinematics Setpoint 1');
 legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest');
 
 figure(3);
@@ -211,54 +165,123 @@ ylim([-50, 350]);
 
 xlabel('Time (s)');
 ylabel('Effector position (mm)');
-title('Effector Position vs Time: 2D Motion Planning');
+title('Effector Position vs Time: Inverse Kinematics Setpoint 1');
 legend('X-Coordinate', 'Z-Coordinate', 'Location', 'SouthWest');
 
+%% Run Test Point 2
+
+%% Define setpoints
+
+arbitraryPosition2 = [300  200  200 ];
+
+testPoint2 = ikin(arbitraryPosition2)
+
+setpoints = [setpoint(0,[0,0,0]),...
+    setpoint(2, rad2enc([testPoint2(1) testPoint2(2) testPoint2(3)])), ...
+    setpoint(4, [0 0 0])];
+
+%% Set up data collection
+csvfile = fopen(sprintf('../logs/log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
+fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
+
+times = zeros(1, loop_iterations);
+
+joint1_values = zeros(1, loop_iterations);
+joint2_values = zeros(1, loop_iterations);
+joint3_values = zeros(1, loop_iterations);
+
+effX_pos = zeros(1, loop_iterations);
+effY_pos = zeros(1, loop_iterations);
+effZ_pos = zeros(1, loop_iterations);
+
+curr_setpoint = setpoints(1);
+
+%% Collect data
+tic
+for idx = 1:loop_iterations %% Revise maximum to number of datapoints to be recorded
+    current_time = toc;
+    
+    % Get the newest status packet
+    returnPacket = status(pp);
+    
+    % Calculate forward kinematics
+    [T, T1, T2, T3] = fwkin3001([-enc2rad(returnPacket(1)) -enc2rad(returnPacket(2)) -enc2rad(returnPacket(3))]);
+    
+    % Log data to file
+    fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', current_time,returnPacket(1:3),T(1:3,end));
+    
+    % Display stick model
+    stickModel(T, T1, T2, model); %%TODO: Model may be plotting over something it's not supposed to be
+
+    % Store current values in log matrices
+    times(idx) = current_time;
+    joint1_values(idx) = -enc2rad(returnPacket(1));
+    joint2_values(idx) = -enc2rad(returnPacket(2));
+    joint3_values(idx) = -enc2rad(returnPacket(3));
+    effX_pos(idx) = T(1, end);
+    effY_pos(idx) = T(2, end);
+    effZ_pos(idx) = T(3, end);
+    
+    % Setpoint handling
+    if current_time >= curr_setpoint.Time 
+        % Execute the next setpoint if the current one has passed
+        if curr_setpoint.HasExecuted 
+            [setpoint_idx, next_setpoint] = setpoint.getNextSetpoint(setpoints);
+            
+            if current_time >= next_setpoint.Time
+                curr_setpoint = next_setpoint;
+            end
+            
+            if setpoint_idx == length(setpoints) + 1
+                % Stay at the last setpoint forever if we've run out of setpoints
+                curr_setpoint = setpoints(end); 
+            end
+        end
+        rad_setpoint = curr_setpoint.execute();
+        enc_setpoint = [-rad2enc(rad_setpoint(1)), -rad2enc(rad_setpoint(2)), -rad2enc(rad_setpoint(3))];
+        set_setpoint(pp, enc_setpoint);
+    end
+
+    % Calculate the remaining loop time to sleep for
+    elapsed = toc;
+    sleep_time = period - (elapsed - current_time);
+    
+    % If the loop iteration has run over (rare), don't sleep
+    % Haha we're tired and this does the job!
+    if sleep_time < 0
+        sleep_time;
+        sleep_time = 0;
+    end
+    
+    % Sleep for the remaining loop time
+    java.lang.Thread.sleep(sleep_time * 1000);
+end
+
+%% Close the csv file
+fclose(csvfile);
+
+%% Plot
 figure(4);
 grid on;
 
-plot(times(1:end-1), diff(joint1_values)/period, times(1:end-1), diff(joint2_values)/period, times(1:end-1), diff(joint3_values));
-ylim([-2.5, 2.5]);
-xlabel('Time(s)');
-ylabel('Joint velocities (rad/s)');
-title('Joint Velocity vs Time: 2D Motion Planning');
+plot(times, joint1_values, 'r', times, joint2_values, 'g', times, joint3_values, 'b');
+ylim([-pi, pi]);
+
+xlabel('Time (s)');
+ylabel('Joint Angle (rad)');
+title('Joint Angle vs Time: Inverse Kinematics Setpoint 2');
 legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest');
 
 figure(5);
 grid on;
 
-traj_x = [];
-traj_z = [];
+plot(times, effX_pos, times, effZ_pos);
+ylim([-50, 350]);
 
-for s = 1:length(full_trajectory)
-    sT = fwkin3001(full_trajectory(s).Position);
-    traj_x = [traj_x, sT(1,end)];
-    traj_z = [traj_z, sT(3,end)];
-end
-
-plot(traj_x, traj_z, '.g')
-
-hold on;
-
-plot(effX_pos, effZ_pos, 'b');
-xlim([0, 350]);
-ylim([-50, 250]);
-
-setpoint_x = [];
-setpoint_z = [];
-
-for s = 1:length(setpoints)
-    sT = fwkin3001(setpoints(s).Position);
-    setpoint_x = [setpoint_x, sT(1,end)];
-    setpoint_z = [setpoint_z, sT(3,end)];
-end
-
-plot(setpoint_x, setpoint_z, 'or')
-
-xlabel('X position (mm)');
-ylabel('Z position (mm)');
-title('X-Z Plane position: 2D Motion Planning');
-legend('Trajectory points', 'Setpoints', 'Actual position', 'Location', 'NorthWest');
+xlabel('Time (s)');
+ylabel('Effector position (mm)');
+title('Effector Position vs Time: Inverse Kinematics Setpoint 2');
+legend('X-Coordinate', 'Z-Coordinate', 'Location', 'SouthWest');
 
 % Clear up memory upon termination
 pp.shutdown()
