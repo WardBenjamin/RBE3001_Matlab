@@ -10,8 +10,10 @@ classdef setpoint < handle
     
     methods
         function obj = setpoint(time, position)
-            obj.Time = time;
-            obj.Position = position;
+            if nargin > 0
+                obj.Time = time;
+                obj.Position = position;
+            end
         end
         
         function pos = execute(obj)

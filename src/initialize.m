@@ -2,6 +2,8 @@ function coms = initialize()
 clear
 clear java
 clear classes;
+cla;
+% clc;
 
 addpath('../lib'); % Ensure that lib folder is on filepath
 addpath('util');
@@ -31,14 +33,18 @@ coms = PacketProcessor(myHIDSimplePacketComs);
 
 %% Calibrate
 status(coms);
-pause(.1)
+pause(.1);
 statusPacket = status(coms);
-pause(.1)
+pause(.1);
 calibration(coms, statusPacket);
 pause(.1);
 calibration(coms, statusPacket);
 status(coms);
 status(coms);
 status(coms);
+
+% Default PID config
+pid_config(coms, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
+pid_config(coms, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
 
 end

@@ -4,7 +4,7 @@ function returnPacket = pid_config(pp, j1conf, j2conf, j3conf)
         % the Nucleo
 
        
-        DEBUG   = true;          % enables/disables debug prints
+        DEBUG   = false;          % enables/disables debug prints
 
         % Instantiate a packet - the following instruction allocates 64
         % bytes for this purpose. Recall that the HID interface supports

@@ -1,72 +1,52 @@
 coms = initialize();
 
 %% Define setpoints
-setpoints = [setpoint(3, [0 -1 .2]), setpoint(6, [0 -.4 -.5]), setpoint(9, [0 0 0])]; %TODO: Set to correct points
+setpoints = [setpoint(0.85, [250  80  20]), setpoint(1.85, [200 -125 175]), setpoint(3, [175 0 -34])]; %TODO: Set to correct points
 curr_setpoint = setpoints(1);
 
 %% Set up timing
 steps = 10;
-secondsToRecord = 15;
+secondsToRecord = 5;
 frequency = 5;
 period = 1 / frequency; 
 loop_iterations = secondsToRecord * frequency;
 
 %% Interpolate linearized points
 returnPacket = status(coms);
-[T, T1, T2, ~] = fwkin3001([-enc2rad(returnPacket(1)) -enc2rad(returnPacket(2)) -enc2rad(returnPacket(3))]);
+[T, ~] = fwkin3001([-enc2rad(returnPacket(1)) -enc2rad(returnPacket(2)) -enc2rad(returnPacket(3))]);
 
 %TODO: Not sure if my interpolation logic is correct here
 
-fullTrajectory = zeros(length(setpoints) * steps, 1);
-% Current Position - Setpoint 1
+full_trajectory = [];
+
+
 x0 = T(1, end);
 y0 = T(2, end);
 z0 = T(3, end);
-t0 = 0; % Initial time by definition 0
-curr_setpoint = curr_setpoint.getNextSetpoint(setpoints);
-x1 = curr_setpoint.Position(1);
-y1 = curr_setpoint.Position(2);
-z1 = curr_setpoint.Position(3);
-t1 = curr_setpoint.Time;
-x = linspace(x0, x1, steps);
-y = linspace(y0, y1, steps);
-z = linspace(z0, z1, steps);
-t = linspace(t0, t1, steps);
-for i=1:steps
-    fullTrajectory(i) = setpoint(t(i), [x(i),y(i),z(i)]);
+t0 = 0;
+
+for idx = 1:(length(setpoints))
+    next_setpoint = setpoints(idx);
+    partial_trajectory = [];
+    
+    x = linspace(x0, next_setpoint.Position(1), steps);
+    y = linspace(y0, next_setpoint.Position(2), steps);
+    z = linspace(z0, next_setpoint.Position(3), steps);
+    t = linspace(t0, next_setpoint.Time, steps);
+    
+    for jdx = 1:steps
+        partial_trajectory = [partial_trajectory, setpoint(t(jdx), [x(jdx), y(jdx), z(jdx)])];
+    end
+    
+    % TODO: Maybe use fancy calculations to put this data in a preallocated matrix
+    full_trajectory = horzcat(full_trajectory, partial_trajectory);
+
+    x0 = next_setpoint.Position(1);
+    y0 = next_setpoint.Position(2);
+    z0 = next_setpoint.Position(3);
+    t0 = next_setpoint.Time;
 end
 
-% Setpoint 1 - 2
-x0=x1; y0=y1; z0=z1; t0=t1;
-curr_setpoint = curr_setpoint.getNextSetpoint(setpoints);
-x1 = curr_setpoint.Position(1);
-y1 = curr_setpoint.Position(2);
-z1 = curr_setpoint.Position(3);
-t1 = curr_setpoint.Time;
-x = linspace(x0, x1, steps);
-y = linspace(y0, y1, steps);
-z = linspace(z0, z1, steps);
-t = linspace(t0, t1, steps);
-for i=1:steps
-    fullTrajectory(i + steps) = setpoint(t(i), [x(i),y(i),z(i)]);
-end
-
-% Setpoint 2 - 3
-x0=x1; y0=y1; z0=z1; t0=t1;
-curr_setpoint = curr_setpoint.getNextSetpoint(setpoints);
-x1 = curr_setpoint.Position(1);
-y1 = curr_setpoint.Position(2);
-z1 = curr_setpoint.Position(3);
-t1 = curr_setpoint.Time;
-x = linspace(x0, x1, steps);
-y = linspace(y0, y1, steps);
-z = linspace(z0, z1, steps);
-t = linspace(t0, t1, steps);
-for i=1:steps
-    fullTrajectory(i + steps * 2) = setpoint(t(i), [x(i),y(i),z(i)]);
-end
-
-curr_setpoint = setpoints(1); % Reset current setpoint to first setpoint
 %% Set up data collection
 % csvfile = fopen(sprintf('../logs/log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
 % fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
@@ -86,9 +66,15 @@ model = stickModel(eye(4), eye(4), eye(4), []);
 %% Collect data
 
 tic
+idx = 1;
 
-for idx = 1:loop_iterations  
+while 1
+% for idx = 1:loop_iterations  
     current_time = toc;
+    
+    if current_time > secondsToRecord
+        break;
+    end
     
     % Get the newest status packet
     returnPacket = status(coms);
@@ -112,38 +98,28 @@ for idx = 1:loop_iterations
     effZ_pos(idx) = T(3, end);
     
     % Setpoint handling
-    if current_time >= curr_setpoint.Time 
-        % Execute the next setpoint if the current one has passed
-        if curr_setpoint.HasExecuted 
-            [setpoint_idx, next_setpoint] = setpoint.getNextSetpoint(fullTrajectory);
-            
-            if current_time >= next_setpoint.Time
-                curr_setpoint = next_setpoint;
-            end
-            
-            if setpoint_idx == length(fullTrajectory) + 1
-                % Stay at the last setpoint forever if we've run out of setpoints
-                curr_setpoint = setpoints(end); 
-            end
+    % Execute the next setpoint if the current one has passed
+    if curr_setpoint.HasExecuted
+        [setpoint_idx, next_setpoint] = setpoint.getNextSetpoint(full_trajectory);
+
+        if current_time >= curr_setpoint.Time
+            curr_setpoint = next_setpoint;
         end
+
+        if setpoint_idx == length(full_trajectory) + 1
+            % Stay at the last setpoint forever if we've run out of setpoints
+            curr_setpoint = full_trajectory(end); 
+        end
+    else
         rad_setpoint = ikin(curr_setpoint.execute());
         enc_setpoint = [-rad2enc(rad_setpoint(1)), -rad2enc(rad_setpoint(2)), -rad2enc(rad_setpoint(3))];
         set_setpoint(coms, enc_setpoint);
     end
+    
+%     dist_temp = [effX_pos(idx), effY_pos(idx), effZ_pos(idx); curr_setpoint.Position];
+%     pdist(dist_temp, 'euclidean')
 
-    % Calculate the remaining loop time to sleep for
-    elapsed = toc;
-    sleep_time = period - (elapsed - current_time);
-    
-    % If the loop iteration has run over (rare), don't sleep
-    % Haha we're tired and this does the job!
-    if sleep_time < 0
-        sleep_time;
-        sleep_time = 0;
-    end
-    
-    % Sleep for the remaining loop time
-    java.lang.Thread.sleep(sleep_time * 1000);
+    idx = idx + 1;
 end
 
 set_setpoint(coms, [0 0 0]);
@@ -166,7 +142,7 @@ title('Task Space Path');
 figure(3);
 grid on;
 plot(times, effX_pos, times, effY_pos, times, effZ_pos);
-ylim([-50, 350]);
+ylim([-350, 350]);
 xlabel('Time (s)');
 ylabel('Effector position (mm)');
 title('Effector Position vs Time');
@@ -187,7 +163,7 @@ legend('X-Velocity', 'Y-Velocity', 'Z-Velocity', 'Location', 'SouthWest');
 
 x_acc = diff(x_vel)/period;
 y_acc = diff(y_vel)/period;
-z_acc = diff(z_acc)/period;
+z_acc = diff(z_vel)/period;
 
 figure(5);
 grid on;

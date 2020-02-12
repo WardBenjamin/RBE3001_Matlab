@@ -1,11 +1,11 @@
 coms = initialize();
 
 %% Define setpoints
-setpoints = [setpoint(3, [0 -1 .2]), setpoint(6, [0 -.4 -.5]), setpoint(9, [0 0 0])]; %TODO: Set to correct points
+setpoints = [setpoint(0.85, [250  80  20]), setpoint(1.85, [200 -125 175]), setpoint(3, [175 0 0])]; %TODO: Set to correct points
 curr_setpoint = setpoints(1);
 
 %% Set up timing
-secondsToRecord = 15;
+secondsToRecord = 3;
 frequency = 5;
 period = 1 / frequency; 
 loop_iterations = secondsToRecord * frequency;
@@ -29,9 +29,15 @@ model = stickModel(eye(4), eye(4), eye(4), []);
 %% Collect data
 
 tic
+idx = 1;
 
-for idx = 1:loop_iterations  
+while 1
+% for idx = 1:loop_iterations  
     current_time = toc;
+    
+    if current_time > secondsToRecord
+        break;
+    end
     
     % Get the newest status packet
     returnPacket = status(coms);
@@ -55,38 +61,29 @@ for idx = 1:loop_iterations
     effZ_pos(idx) = T(3, end);
     
     % Setpoint handling
-    if current_time >= curr_setpoint.Time 
-        % Execute the next setpoint if the current one has passed
-        if curr_setpoint.HasExecuted 
-            [setpoint_idx, next_setpoint] = setpoint.getNextSetpoint(setpoints);
-            
-            if current_time >= next_setpoint.Time
-                curr_setpoint = next_setpoint;
-            end
-            
-            if setpoint_idx == length(setpoints) + 1
-                % Stay at the last setpoint forever if we've run out of setpoints
-                curr_setpoint = setpoints(end); 
-            end
+    
+    % Execute the next setpoint if the current one has passed
+    if curr_setpoint.HasExecuted
+        [setpoint_idx, next_setpoint] = setpoint.getNextSetpoint(setpoints);
+
+        if current_time >= curr_setpoint.Time
+            curr_setpoint = next_setpoint;
         end
+
+        if setpoint_idx == length(setpoints) + 1
+            % Stay at the last setpoint forever if we've run out of setpoints
+            curr_setpoint = setpoints(end); 
+        end
+    else
         rad_setpoint = ikin(curr_setpoint.execute());
         enc_setpoint = [-rad2enc(rad_setpoint(1)), -rad2enc(rad_setpoint(2)), -rad2enc(rad_setpoint(3))];
         set_setpoint(coms, enc_setpoint);
     end
+    
+%     dist_temp = [effX_pos(idx), effY_pos(idx), effZ_pos(idx); curr_setpoint.Position];
+%     pdist(dist_temp, 'euclidean')
 
-    % Calculate the remaining loop time to sleep for
-    elapsed = toc;
-    sleep_time = period - (elapsed - current_time);
-    
-    % If the loop iteration has run over (rare), don't sleep
-    % Haha we're tired and this does the job!
-    if sleep_time < 0
-        sleep_time;
-        sleep_time = 0;
-    end
-    
-    % Sleep for the remaining loop time
-    java.lang.Thread.sleep(sleep_time * 1000);
+    idx = idx + 1;
 end
 
 set_setpoint(coms, [0 0 0]);
@@ -107,9 +104,9 @@ zlabel('Z [mm]');
 title('Task Space Path');
 
 figure(3);
-grid on;
 plot(times, effX_pos, times, effY_pos, times, effZ_pos);
-ylim([-50, 350]);
+grid on;
+ylim([-350, 350]);
 xlabel('Time (s)');
 ylabel('Effector position (mm)');
 title('Effector Position vs Time');

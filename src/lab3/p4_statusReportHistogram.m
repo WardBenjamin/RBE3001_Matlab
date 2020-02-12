@@ -1,8 +1,5 @@
 coms = initialize();
 
-% pid_config(coms, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
-% pid_config(coms, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
-
 loop_iterations = 1000;
 times = zeros(loop_iterations, 1);
 
