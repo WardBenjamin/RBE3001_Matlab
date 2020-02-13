@@ -143,6 +143,8 @@ set_setpoint(coms, [0 0 0]);
 figure(2);
 grid on;
 plot3(effX_pos, effY_pos, effZ_pos);
+hold on;
+plot3(250, 80, 20, 'o', 200, -125, 175, 'o', 175, 0, -34, 'o');
 view(45,28);
 axis equal;
 xlim([-50 300]), ylim([-250 250]), zlim([-100 400]);
@@ -150,15 +152,18 @@ xlabel('X [mm]');
 ylabel('Y [mm]');
 zlabel('Z [mm]');
 title('Task Space Path');
+legend('Path', 'Setpoint 1', 'Setpoint 2', 'Setpoint 3');
 
 figure(3);
 grid on;
 plot(times, effX_pos, times, effY_pos, times, effZ_pos);
+hold on;
+plot([.95 1.85 2.7], [250 200 175], 'o', [.95 1.85 2.7], [80, -125, 0], 'o', [.95 1.85 2.7], [20, 175, -34], 'o'); 
 ylim([-350, 350]);
 xlabel('Time (s)');
 ylabel('Effector position (mm)');
 title('Effector Position vs Time');
-legend('X-Coordinate', 'Y-Coordinate', 'Z-Coordinate', 'Location', 'SouthWest');
+legend('X-Coordinate', 'Y-Coordinate', 'Z-Coordinate', 'X-Setpoints', 'Y-Setpoints', 'Z-Setpoints', 'Location', 'SouthWest');
 
 x_vel = diff(effX_pos)/period;
 y_vel = diff(effY_pos)/period;
