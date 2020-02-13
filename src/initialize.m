@@ -2,7 +2,8 @@ function coms = initialize()
 clear
 clear java
 clear classes;
-cla;
+close all;
+%cla;
 % clc;
 
 addpath('../lib'); % Ensure that lib folder is on filepath

@@ -1,7 +1,7 @@
 coms = initialize();
 
 %% Define setpoints
-setpoints = [setpoint(0.85, [250  80  20]), setpoint(1.85, [200 -125 175]), setpoint(3, [175 0 -34])]; %TODO: Set to correct points
+setpoints = [setpoint(0.85, [250  80  20]), setpoint(1.75, [200 -125 175]), setpoint(2.6, [175 0 -34])]; %TODO: Set to correct points
 
 %% Set up timing
 steps = 10;
@@ -10,40 +10,51 @@ frequency = 5;
 period = 1 / frequency; 
 loop_iterations = secondsToRecord * frequency;
 
-%% Interpolate linearized points
+%% Set Up Trajectory Plans
 returnPacket = status(coms);
 [T, ~] = fwkin3001([-enc2rad(returnPacket(1)) -enc2rad(returnPacket(2)) -enc2rad(returnPacket(3))]);
 
-%TODO: Not sure if my interpolation logic is correct here
+ai = zeros(3, length(setpoints) * 6);
+v0 = 0;
+vf = 0;
+a0 = 0;
+af = 0;
 
-full_trajectory = [];
-
-
-x0 = T(1, end);
-y0 = T(2, end);
-z0 = T(3, end);
 t0 = 0;
+q0 = T(1:3, end).';
+    
+for s = 1:length(setpoints) % Iterate through setpoints
+    tf = setpoints(s).Time;
+    qf = setpoints(s).Position;
 
-for idx = 1:(length(setpoints))
-    next_setpoint = setpoints(idx);
-    partial_trajectory = [];
-    
-    x = linspace(x0, next_setpoint.Position(1), steps);
-    y = linspace(y0, next_setpoint.Position(2), steps);
-    z = linspace(z0, next_setpoint.Position(3), steps);
-    t = linspace(t0, next_setpoint.Time, steps);
-    
-    for jdx = 1:steps
-        partial_trajectory = [partial_trajectory, setpoint(t(jdx), [x(jdx), y(jdx), z(jdx)])];
+    for a = 1:3 % Iterate through axes
+        quintic = quinPolSolve(t0, tf, a0, af, v0, vf, q0(a), qf(a))
+        indices = sub2ind(size(ai), [s s s s s s], [(a-1)*6+1 (a-1)*6+2 (a-1)*6+3 (a-1)*6+4 (a-1)*6+5 (a-1)*6+6]);
+        ai(indices) = quintic;
     end
     
-    % TODO: Maybe use fancy calculations to put this data in a preallocated matrix
-    full_trajectory = horzcat(full_trajectory, partial_trajectory);
+    t0 = tf;
+    q0 = qf;
+end
 
-    x0 = next_setpoint.Position(1);
-    y0 = next_setpoint.Position(2);
-    z0 = next_setpoint.Position(3);
-    t0 = next_setpoint.Time;
+%% Create Trajectory Setpoints
+
+full_trajectory = [];
+q = zeros(1,3);
+
+current_setpoint = setpoint(0, T(1:3, end).');
+
+for s = 1:length(setpoints)
+    next_setpoint = setpoints(s);
+    
+    for t = linspace(current_setpoint.Time, next_setpoint.Time, steps)
+        for a = 1:3 % Iterate through axes
+            q(a) = ai(s, (a-1)*6+1) + ai(s, (a-1)*6+2) * t + ai(s, (a-1)*6+3) * t^2 + ai(s, (a-1)*6+4) * t^3 + ai(s, (a-1)*6+5) * t^4+ ai(s, (a-1)*6+6) * t^5;
+        end
+        full_trajectory = [full_trajectory, setpoint(t, [q(1), q(2), q(3)])];
+    end
+    
+    current_setpoint = next_setpoint;
 end
 
 curr_setpoint = full_trajectory(1);
