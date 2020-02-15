@@ -34,14 +34,14 @@ calibration(pp, statusPacket);
 pause(.1);
 calibration(pp, statusPacket);
 
-model = stickModel([0 0 0], []);
+model = stickModelBasic([0 0 0], []);
 
 %% Run status command 6 times and record data in a .csv file with the timestamp as a name
 csvfile = fopen(sprintf('../logs/log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
 fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
 for k=1:10000 %% Revise maximum to number of datapoints to be recorded
     returnPacket=status(pp);
-    stickModel([-enc2rad(returnPacket(1)) -enc2rad(returnPacket(2)) -enc2rad(returnPacket(3))], model);
+    stickModelBasic([-enc2rad(returnPacket(1)) -enc2rad(returnPacket(2)) -enc2rad(returnPacket(3))], model);
     fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', returnPacket(1:11));
 %     pause(.5);
 end

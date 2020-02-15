@@ -1,4 +1,4 @@
-function stickModel = stickModel(T, T1, T2, lastModel)
+function stickModel = stickModelBasic(T, T1, T2, lastModel)
 
     % TODO: We can pass in fwkin in some places... potential speedup
 
@@ -20,6 +20,7 @@ function stickModel = stickModel(T, T1, T2, lastModel)
         hp1 = plot3([p_0(1) p_1(1)], [p_0(2) p_1(2)], [p_0(3) p_1(3)], 'b', 'LineWidth', 2);
         hp2 = plot3([p_1(1) p_2(1)], [p_1(2) p_2(2)], [p_1(3) p_2(3)], 'g', 'LineWidth', 2);
         hp3 = plot3([p_2(1) p_3(1)], [p_2(2) p_3(2)], [p_2(3) p_3(3)], 'r', 'LineWidth', 2);
+%         hq = quiver(p_3(1), p_3(2), p_3(3), 
         grid on;
         view(45,28);
         axis equal;

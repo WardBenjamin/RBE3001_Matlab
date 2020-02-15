@@ -36,27 +36,69 @@ pause(.1)
 calibration(pp, statusPacket);
 pause(.1);
 calibration(pp, statusPacket);
-
 statusPacket = status(pp);
 statusPacket = status(pp);
 statusPacket = status(pp);
 
-pid_config(pp, [.0007, .0004, 0], [.0009, .008, .1], [.005, .0001, 0])
-pid_config(pp, [.0007, .0004, 0], [.0009, .008, .1], [.005, .0001, 0])
-
-set_setpoint(pp, [0,0,0]);
-set_setpoint(pp, [0,0,0]);
+pid_config(pp, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
+pid_config(pp, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
 
 %% Define setpoints
-setpoints = [setpoint(0, [0 0 0]), setpoint(3, [0 -1 .2]), setpoint(6, [0 -.4 -.5]), setpoint(9, [0 0 0])]; %TODO: Set to correct points
-curr_setpoint = setpoints(1);
+setpoints = [setpoint(0, [0 0 0]), ...
+    setpoint(3, [0 -1 .2]), setpoint(6, [0 -.4 -.5]), setpoint(9, [0 0 0])];
 
-%% Set up timing
-secondsToRecord = 15;
+    
+%% Set Up Timing
+secondsToRecord = 15; %TODO: Define appropreiate length
+steps = 30; %TODO: Define number of steps
+% t_intervals = linspace(0, secondsToRecord, steps);
 frequency = 5;
-period = 1 / frequency; 
+period = 1 / frequency;
 loop_iterations = secondsToRecord * frequency;
+    
+%% Set Up Trajectory Plans
+ai = zeros(3, (length(setpoints) - 1) * 4);
+vi = 0;
+vf = 0;
 
+for s = 1:(length(setpoints) - 1) % Iterate through setpoints
+    ti = setpoints(s).Time;
+    tf = setpoints(s+1).Time;
+    thetai=setpoints(s).Position;
+    thetaf=setpoints(s+1).Position;
+    for a = 1:3 % Iterate through axes
+        cubic = CuPolSolve(ti, tf, vi, vf, thetai(a), thetaf(a))
+        indices = sub2ind(size(ai), [s s s s], [(a-1)*4+1 (a-1)*4+2 (a-1)*4+3 (a-1)*4+4]);
+        ai(indices) = cubic;
+    end
+end
+
+%% Create Trajectory Setpoints
+
+full_trajectory = setpoints(1);
+q = zeros(1,3);
+
+for s = 1:(length(setpoints) - 1)
+    current_setpoint = setpoints(s);
+    next_setpoint = setpoints(s+1);
+    
+    steps = 12;
+    time_span = next_setpoint.Time - current_setpoint.Time;
+    %% TODO: Can the robot actually process 5 setpoints per second? - Laks
+    if time_span > 2
+        % If the trajectory will generate less than 5 setpoints per second,
+        % generate additional setpoints
+        steps = time_span * (steps / 2);
+    end
+    
+    for t = linspace(current_setpoint.Time, next_setpoint.Time, steps)
+        for a = 1:3 % Iterate through axes
+            q(a) = ai(s, (a-1)*4+1) + ai(s, (a-1)*4+2) * t + ai(s, (a-1)*4+3) * t^2 + ai(s, (a-1)*4+4) * t^3;
+        end
+        full_trajectory = [full_trajectory, setpoint(t, [q(1), q(2), q(3)])];
+    end
+end
+    
 %% Set up data collection
 csvfile = fopen(sprintf('../logs/log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
 fprintf(csvfile, 'Encoder_Joint1,Encoder_Joint2,Encoder_Joint3,Velocity_Joint1,Velocity_Joint2,Velocity_Joint3,\n');
@@ -71,26 +113,26 @@ effX_pos = zeros(1, loop_iterations);
 effY_pos = zeros(1, loop_iterations);
 effZ_pos = zeros(1, loop_iterations);
 
-model = stickModel(eye(4), eye(4), eye(4), []);
+model = stickModelBasic(eye(4), eye(4), eye(4), []);
+
+curr_setpoint = full_trajectory(1);
 
 %% Collect data
-
 tic
-
-for idx = 1:loop_iterations  
+for idx = 1:loop_iterations %% Revise maximum to number of datapoints to be recorded
     current_time = toc;
     
     % Get the newest status packet
     returnPacket = status(pp);
     
     % Calculate forward kinematics
-    [T, T1, T2, ~] = fwkin3001([-enc2rad(returnPacket(1)) -enc2rad(returnPacket(2)) -enc2rad(returnPacket(3))]);
+    [T, T1, T2, T3] = fwkin([-enc2rad(returnPacket(1)) -enc2rad(returnPacket(2)) -enc2rad(returnPacket(3))]);
     
     % Log data to file
     fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', current_time,returnPacket(1:3),T(1:3,end));
     
     % Display stick model
-    stickModel(T, T1, T2, model);
+    stickModelBasic(T, T1, T2, model);
 
     % Store current values in log matrices
     times(idx) = current_time;
@@ -105,15 +147,15 @@ for idx = 1:loop_iterations
     if current_time >= curr_setpoint.Time 
         % Execute the next setpoint if the current one has passed
         if curr_setpoint.HasExecuted 
-            [setpoint_idx, next_setpoint] = setpoint.getNextSetpoint(setpoints);
+            [setpoint_idx, next_setpoint] = setpoint.getNextSetpoint(full_trajectory);
             
             if current_time >= next_setpoint.Time
                 curr_setpoint = next_setpoint;
             end
             
-            if setpoint_idx == length(setpoints) + 1
+            if setpoint_idx == length(full_trajectory) + 1
                 % Stay at the last setpoint forever if we've run out of setpoints
-                curr_setpoint = setpoints(end); 
+                curr_setpoint = full_trajectory(end); 
             end
         end
         rad_setpoint = curr_setpoint.execute();
@@ -136,7 +178,6 @@ for idx = 1:loop_iterations
     java.lang.Thread.sleep(sleep_time * 1000);
 end
 
-set_setpoint(pp, [0 0 0]);
 
 %% Close the csv file
 fclose(csvfile);
@@ -177,24 +218,38 @@ legend('Joint 1', 'Joint 2', 'Joint 3', 'Location', 'SouthWest');
 figure(5);
 grid on;
 
-plot(effX_pos, effZ_pos);
-xlim([0, 350]);
-ylim([-50, 250]);
+traj_x = [];
+traj_z = [];
+
+for s = 1:length(full_trajectory)
+    sT = fwkin(full_trajectory(s).Position);
+    traj_x = [traj_x, sT(1,end)];
+    traj_z = [traj_z, sT(3,end)];
+end
+
+plot(traj_x, traj_z, '.g')
 
 hold on;
 
-% TODO: Do we need to do fwkin for setpoints to get the xz-plane positions
-% of each?
-[s1T, ~, ~, ~] = fwkin3001(setpoints(1).Position);
-[s2T, ~, ~, ~] = fwkin3001(setpoints(2).Position);
-[s3T, ~, ~, ~] = fwkin3001(setpoints(3).Position);
+plot(effX_pos, effZ_pos, 'b');
+xlim([0, 350]);
+ylim([-50, 250]);
 
-plot(s1T(1,end), s1T(3,end), '-o', s2T(1,end), s2T(3,end), '-o', s3T(1,end), s3T(3,end), '-o'); %% TODO: Add correct setpoints
+setpoint_x = [];
+setpoint_z = [];
+
+for s = 1:length(setpoints)
+    sT = fwkin(setpoints(s).Position);
+    setpoint_x = [setpoint_x, sT(1,end)];
+    setpoint_z = [setpoint_z, sT(3,end)];
+end
+
+plot(setpoint_x, setpoint_z, 'or')
 
 xlabel('X position (mm)');
 ylabel('Z position (mm)');
 title('X-Z Plane position: 2D Motion Planning');
-legend('Actual position', 'Setpoint 1', 'Setpoint 2', 'Setpoint 3', 'Location', 'NorthWest');
+legend('Trajectory points', 'Setpoints', 'Actual position', 'Location', 'NorthWest');
 
 % Clear up memory upon termination
 pp.shutdown()
