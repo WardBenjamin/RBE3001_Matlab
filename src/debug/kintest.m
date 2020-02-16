@@ -4,7 +4,7 @@ function q = kintest(enc)
 
     [T, T1, T2, ~] = fwkin(-rad);
     
-    stickModelBasic(T, T1, T2, []);
+    stickModel(T, T1, T2, []);
     
     fw = T(1:3,end).'
     

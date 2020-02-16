@@ -67,7 +67,7 @@ for s = 1:(length(setpoints) - 1) % Iterate through setpoints
     thetai=setpoints(s).Position;
     thetaf=setpoints(s+1).Position;
     for a = 1:3 % Iterate through axes
-        cubic = CuPolSolve(ti, tf, vi, vf, thetai(a), thetaf(a))
+        cubic = cuPolSolve(ti, tf, vi, vf, thetai(a), thetaf(a))
         indices = sub2ind(size(ai), [s s s s], [(a-1)*4+1 (a-1)*4+2 (a-1)*4+3 (a-1)*4+4]);
         ai(indices) = cubic;
     end
@@ -113,7 +113,7 @@ effX_pos = zeros(1, loop_iterations);
 effY_pos = zeros(1, loop_iterations);
 effZ_pos = zeros(1, loop_iterations);
 
-model = stickModelBasic(eye(4), eye(4), eye(4), []);
+model = stickModel(eye(4), eye(4), eye(4), []);
 
 curr_setpoint = full_trajectory(1);
 
@@ -132,7 +132,7 @@ for idx = 1:loop_iterations %% Revise maximum to number of datapoints to be reco
     fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', current_time,returnPacket(1:3),T(1:3,end));
     
     % Display stick model
-    stickModelBasic(T, T1, T2, model);
+    stickModel(T, T1, T2, model);
 
     % Store current values in log matrices
     times(idx) = current_time;

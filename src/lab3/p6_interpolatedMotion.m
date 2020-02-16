@@ -62,7 +62,7 @@ effX_pos = zeros(1, loop_iterations);
 effY_pos = zeros(1, loop_iterations);
 effZ_pos = zeros(1, loop_iterations);
 
-model = stickModelBasic(eye(4), eye(4), eye(4), []);
+model = stickModel(eye(4), eye(4), eye(4), []);
 
 %% Collect data
 
@@ -87,7 +87,7 @@ while 1
 %     fprintf(csvfile, '%f,%f,%f,%f,%f,%f,\n', current_time,returnPacket(1:3),T(1:3,end));
     
     % Display stick model
-    stickModelBasic(T, T1, T2, model);
+    stickModel(T, T1, T2, model);
 
     % Store current values in log matrices
     times(idx) = current_time;

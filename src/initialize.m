@@ -3,6 +3,7 @@ clear
 clear java
 clear classes;
 close all;
+delete(findall(gcf,'type','annotation'));
 %cla;
 % clc;
 
