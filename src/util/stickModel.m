@@ -11,12 +11,11 @@ function stickModel = stickModel(T, T1, T2, lastModel, p_dot, A, manipEllipseVol
     p2 = T1*T2; p2 = p2(1:3,end);
     p3 = T(1:3,end);
     
-    % Plot each link on a 3D plot
-    figure(1);
-    
     hold on;
-  
+    
+    % Plot each link on a 3D plot 
     if isempty(lastModel)
+    	figure(1);
         % ch = checkerboard(10, 16) > .5;
         %         H(1) = slice(repmat(double(ch),[1 1 2]),[],[],1);
         
@@ -30,19 +29,19 @@ function stickModel = stickModel(T, T1, T2, lastModel, p_dot, A, manipEllipseVol
         end
         
         if nargin > 5
-            he = plot_ellipse(A, p3, 'edgecolor', 'k', 'fillcolor', 'c', 'alpha', 0.5);
+%             he = plot_ellipse(A, p3, 'edgecolor', 'k', 'fillcolor', 'c', 'alpha', 0.5);
+            he = plot_ellipse(A, p3, 'edgecolor', 'k', 'fillcolor', 'c');
         end
         
         if nargin > 7
-            hwa = annotation('textbox', [.65 .85 .1 .1], 'String', "", 'color', 'r', 'LineStyle', 'none');
-            if manipEllipseVol < singularityThreshold
-                hwa.String = "Ellipse Volume: " + manipEllipseVol + newline + "Warning:" + newline + "Near singularity!";
-                hwa.Color = 'r';
-            else
-                hwa.String = "Ellipse Volume: " + manipEllipseVol;
-                hwa.Color = 'b';
-            end
-            
+            hwa = annotation('textbox', [.65 .85 .1 .1], 'String', "", 'color', 'r', 'LineStyle', 'none', 'FitBoxToText','off');
+%             if manipEllipseVol < singularityThreshold
+%                 hwa.String = "Ellipse Volume: " + manipEllipseVol + newline + "Warning:" + newline + "Near singularity!";
+%                 hwa.Color = 'r';
+%             else
+%                 hwa.String = "Ellipse Volume: " + manipEllipseVol;
+%                 hwa.Color = 'b';
+%             end
         end
         
         grid on;
@@ -55,7 +54,11 @@ function stickModel = stickModel(T, T1, T2, lastModel, p_dot, A, manipEllipseVol
         zlabel('Z [mm]');
         title('Stick Model');
         
-        stickModel = [triad('Scale', 30, 'LineWidth', 1, 'Matrix', T) triad('Scale', 30, 'LineWidth', 1, 'Matrix', T1) triad('Scale', 30, 'LineWidth', 1, 'Matrix', T1*T2), hp1, hp2, hp3];
+        ht1 = triad('Scale', 30, 'LineWidth', 1, 'Matrix', T);
+        ht2 = triad('Scale', 30, 'LineWidth', 1, 'Matrix', T1);
+        ht3 = triad('Scale', 30, 'LineWidth', 1, 'Matrix', T1*T2);
+        
+        stickModel = [ht1, ht2, ht3, hp1, hp2, hp3];
         
         if nargin > 4
             stickModel = [stickModel hq];
@@ -70,8 +73,8 @@ function stickModel = stickModel(T, T1, T2, lastModel, p_dot, A, manipEllipseVol
         end
         
         % Triads print a TON of warnings without turning these two types off
-        warning('off', 'MATLAB:hg:DiceyTransformMatrix'); 
-        warning('off', 'MATLAB:gui:array:InvalidArrayClass');
+%         warning('off', 'MATLAB:hg:DiceyTransformMatrix'); 
+%         warning('off', 'MATLAB:gui:array:InvalidArrayClass');
     else
         % TODO: Check if old handles are valid
 %         if(ishandle(lastModel(4))...
@@ -90,7 +93,7 @@ function stickModel = stickModel(T, T1, T2, lastModel, p_dot, A, manipEllipseVol
         
         if nargin > 5
             he = lastModel(8);
-            plot_ellipse(A, p3, 'edgecolor', 'k', 'fillcolor', 'c', 'alpha', 0.5, 'alter', he);
+            plot_ellipse(A, p3, 'edgecolor', 'k', 'fillcolor', 'c', 'alter', he, 'alpha', 0);
         end
         
         if nargin > 7
@@ -98,16 +101,26 @@ function stickModel = stickModel(T, T1, T2, lastModel, p_dot, A, manipEllipseVol
             if manipEllipseVol < singularityThreshold
                 hwa.String = "Ellipse Volume: " + manipEllipseVol + newline + "Warning:" + newline + "Near singularity!";
                 hwa.Color = 'r';
-            else
-                hwa.String = "Ellipse Volume: " + manipEllipseVol;
-                hwa.Color = 'b';
+%             else
+%                 hwa.String = "Ellipse Volume: " + manipEllipseVol;
+%                 hwa.Color = 'b';
             end
         end
         
-        lastModel(1).Matrix = T;
-        lastModel(2).Matrix = T1;
-        lastModel(3).Matrix = T1*T2;
+%         set(lastModel(1), T)
+%         ht1 = lastModel(1);
+%         ht1.Matrix = T;
+%         ht2 = lastModel(2);
+%         ht2.Matrix = T1;
+%         ht3 = lastModel(3);
+%         ht3.Matrix = T1*T2;
+        
+%         set(lastModel(1), 'Matrix', T);
+%         set(lastModel(2), 'Matrix', T1);
+%         set(lastModel(3), 'Matrix', T1*T2);
 
         stickModel = lastModel;
     end
+    
+    drawnow;
 end

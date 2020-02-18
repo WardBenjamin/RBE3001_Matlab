@@ -18,7 +18,8 @@ function returnPacket = status(pp)
         %pp.write sends a 15 float packet to the micro controller
         pp.write(SERV_ID, packet);
 
-        pause(0.003); % Minimum amount of time required between write and read
+        java.lang.Thread.sleep(1);
+%         pause(0.001); % Minimum amount of time required between write and read
 
         %pp.read reads a returned 15 float backet from the nucleo.
         returnPacket = pp.read(SERV_ID);
