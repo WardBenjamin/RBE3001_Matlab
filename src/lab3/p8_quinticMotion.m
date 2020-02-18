@@ -1,3 +1,8 @@
+clear
+clear java
+clear classes;
+close all;
+
 coms = initialize();
 
 %% Define setpoints

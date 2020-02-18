@@ -47,9 +47,15 @@ status(coms);
 
 % Default PID config
 pid_config(coms, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
-pid_config(coms, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
+pid_config(coms, [.0007, .0004, 0], [.003 0 0.00005], [.005, 0, 0.001]);
 
 set_setpoint(coms, [0 0 0]);
 set_setpoint(coms, [0 0 0]);
+
+% java.lang.Thread.sleep(250);
+pause(.5);
+
+status(coms);
+status(coms);
 
 end

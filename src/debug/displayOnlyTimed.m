@@ -3,9 +3,13 @@ coms = initialize();
 pid_config(coms, [0 0 0],[0 0 0],[0 0 0]);
 pid_config(coms, [0 0 0],[0 0 0],[0 0 0]);
 
-model = stickModel(eye(4), eye(4), eye(4), [], zeros(1, 3), eye(3), 0, 0);
+show_ellipsoid = true;
 
-% model = stickModel(eye(4), eye(4), eye(4), []);
+if show_ellipsoid
+    model = stickModel(eye(4), eye(4), eye(4), [], zeros(1, 3), eye(3), 0, 0);
+else
+    model = stickModel(eye(4), eye(4), eye(4), [], zeros(1, 3));
+end
 
 runTime = 15;
 
@@ -42,7 +46,11 @@ while 1
 
     singularityThreshold = 8*10^6; %TODO: What should this be? Need to test.
     
-    stickModel(T, T1, T2, model, p_dot, A, manipEllipseVol, singularityThreshold);
+    if show_ellipsoid
+        stickModel(T, T1, T2, model, p_dot, A, manipEllipseVol, singularityThreshold);
+    else
+        stickModel(T, T1, T2, model, p_dot);
+    end
     
     if manipEllipseVol < singularityThreshold
         break;

@@ -1,7 +1,12 @@
+clear
+clear java
+clear classes;
+close all;
+
 coms = initialize();
 
 %% Define setpoints
-setpoints = [setpoint(0.85, [250  80  20]), setpoint(1.75, [200 -125 175]), setpoint(2.6, [175 0 -34])]; %TODO: Set to correct points
+setpoints = [setpoint(0.85, [250  80  20]), setpoint(1.75, [344 0 135]), setpoint(2.6, [175 0 -34])]; %TODO: Set to correct points
 
 %% Set up timing
 steps = 10;
@@ -73,6 +78,7 @@ effX_pos = zeros(1, loop_iterations);
 effY_pos = zeros(1, loop_iterations);
 effZ_pos = zeros(1, loop_iterations);
 model = stickModel(eye(4), eye(4), eye(4), [], zeros(3), eye(3), 0, 0);
+% singularityThreshold = 8*10^6; %TODO: What should this be? Need to test.
 singularityThreshold = 8*10^6; %TODO: What should this be? Need to test.
 
 %% Collect data
@@ -144,7 +150,7 @@ while 1
     idx = idx + 1;
 end
 
-set_setpoint(coms, [0 0 0]);
+% set_setpoint(coms, [0 0 0]);
 
 %% Close the csv file
 % fclose(csvfile);
