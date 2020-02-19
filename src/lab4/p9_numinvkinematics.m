@@ -47,7 +47,7 @@ for i = 1:10
 %         java.lang.Thread.sleep(250);
     end
     
-    if itr > 25
+    if itr > 50 
         itr = 0;
         continue;
     end

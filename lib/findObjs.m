@@ -58,7 +58,14 @@ function [imDetectedDisk, robotFramePose, diskDia] = findObjs(imOrig, T_checker_
 
 R = T_cam_to_checker(1:3,1:3);
 t = T_cam_to_checker(1:3,4);
-% worldPoints = pointsToWorld(cameraParams, R, t, YOUR_PIXEL_VALUES);
+worldPoints = pointsToWorld(cameraParams, R, t, [303 247; 518 397]);
+% worldPoints = T_checker_to_robot * [worldPoints(
+[~, len] = size(worldPoints);
+worldPoints = horzcat(horzcat(worldPoints, zeros(len,1)), ones(len,1)).';
+
+for i = 1:len
+    T_checker_to_robot * worldPoints(1:end, i)
+end
 
 % see https://www.mathworks.com/help/vision/ref/cameraparameters.pointstoworld.html
 % for details on the expected dimensions for YOUR_PIXEL_VALUES)
