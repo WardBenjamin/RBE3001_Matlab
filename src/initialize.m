@@ -50,8 +50,8 @@ status(coms);
 status(coms);
 
 % Default PID config
-pid_config(coms, [.0007, .0004, 0], [.005 0 0.0001], [.005, 0, 0.001]);
 pid_config(coms, [.0007, .0004, 0], [.003 0 0.00005], [.005, 0, 0.001]);
+pid_config(coms, [.0007, .0004, 0], [.0012 0 0.00005], [.0015, 0, 0.001]);
 
 set_setpoint(coms, [0 0 0]);
 set_setpoint(coms, [0 0 0]);
