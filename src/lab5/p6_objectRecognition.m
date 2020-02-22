@@ -1,17 +1,17 @@
-[coms, cameraParams, T_base_check] = initialize();
-
-% TODO: This should go in intialize
-T_cam_check = load('camToCheckTrans.mat'); T_cam_check = T_cam_check.T_cam_check;
+[coms, cameraParams, T_base_check, T_cam_check] = initialize();
 
 % Load test image
 testImage = imread('image_pipeline_test.png');
 testImageGrey = rgb2gray(testImage);
 % In practice: cam = webcam(); image = snapshot(cam);
 
+% Convert testImage from RGB color-space to LAB
+testImageLab = rgb2lab(testImage);
+
 % Find binary masks for color regions
-yMask = thresholdYellow(testImage);
-gMask = thresholdGreen(testImage);
-bMask = thresholdBlue(testImage);
+yMask = thresholdYellow(testImage, testImageLab);
+gMask = thresholdGreen(testImage, testImageLab);
+bMask = thresholdBlue(testImage, testImageLab);
 kMask = thresholdBlack(testImageGrey);
 
 % Segment image and remove false positives
