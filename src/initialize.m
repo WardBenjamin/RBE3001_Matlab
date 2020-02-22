@@ -2,8 +2,8 @@ function [coms, cameraParams, T_base_check] = initialize()
 clear
 clear java
 % clear classes;
-close all;
 delete(findall(gcf,'type','annotation'));
+close all;
 %cla;
 % clc;
 
