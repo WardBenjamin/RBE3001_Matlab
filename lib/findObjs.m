@@ -51,7 +51,13 @@ function [imDetectedDisk, robotFramePose, diskDia] = findObjs(imOrig, T_checker_
 
 %%  2. Segment the image to find the objects of interest.
 
-%  [Your image processing code goes here]
+[yMask, gMask, bMask, kMask] = processImage(im);
+
+[yC, yR] = findObjLocations(yMask);
+[gC, gR] = findObjLocations(gMask);
+[bC, bR] = findObjLocations(bMask, true);
+
+[yellowObjects, greenObjects, blueObjects, blackObjects] = findObjSizes(yC, gC, bC, kMask);
 
 % You can easily convert image pixel coordinates to 3D coordinates (expressed in the
 % checkerboard reference frame) using the following transformations:

@@ -1,5 +1,3 @@
-[coms, cameraParams, T_base_check, T_cam_check] = initialize();
-
 % Load test image
 testImage = imread('image_pipeline_test.png');
 testImageGrey = rgb2gray(testImage);
@@ -9,10 +7,10 @@ testImageGrey = rgb2gray(testImage);
 testImageLab = rgb2lab(testImage);
 
 % Find binary masks for color regions
-yMask = thresholdYellow(testImage, testImageLab);
-gMask = thresholdGreen(testImage, testImageLab);
-bMask = thresholdBlue(testImage, testImageLab);
-kMask = thresholdBlack(testImageGrey);
+yMask = bwareaopen(thresholdYellow(testImage, testImageLab), 300);
+gMask = bwareaopen(thresholdGreen(testImage, testImageLab), 300);
+bMask = bwareaopen(thresholdBlue(testImage, testImageLab), 300);
+kMask = imerode(bwareaopen(thresholdBlack(testImageGrey), 300), strel('disk', 8, 4));
 
 % Segment image and remove false positives
 [yC, yR] = findObjects(yMask);
@@ -40,8 +38,7 @@ viscircles(foundObjects(:, 1:2), foundObjects(:, 3), 'Color', 'k');
 function [objSize, foundObjects] = findObjectSize(coloredCentroids, kMask)
     % Find black regions near colored regions
     % Determine whether object is "large" or "small"
-    processedMask = bwareaopen(kMask, 300); processedMask = imerode(processedMask, strel('disk', 8, 4));
-    stats = regionprops('table', processedMask, 'Centroid', 'MajorAxisLength', 'MinorAxisLength');
+    stats = regionprops('table', kMask, 'Centroid', 'MajorAxisLength', 'MinorAxisLength');
     kCentroids = stats.Centroid;
     [nearestIdx, dist] = dsearchn(kCentroids, coloredCentroids)
     
@@ -59,8 +56,7 @@ function [objSize, foundObjects] = findObjectSize(coloredCentroids, kMask)
 end
 
 function [centroids, radii] = findObjects(mask, filterSmall)
-    processedMask = bwareaopen(mask, 300);
-    stats = regionprops('table', processedMask, 'Centroid', 'MajorAxisLength', 'MinorAxisLength');
+    stats = regionprops('table', mask, 'Centroid', 'MajorAxisLength', 'MinorAxisLength');
     centroids = stats.Centroid;
     diameters = mean([stats.MajorAxisLength stats.MinorAxisLength],2);
     
