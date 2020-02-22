@@ -1,4 +1,4 @@
-function [coms, cameraParams, T_base_check] = initialize()
+function [coms, cam, cameraParams, T_base_check, T_cam_check] = initialize()
 clear
 clear java
 % clear classes;
@@ -30,9 +30,11 @@ myHIDSimplePacketComs.setPid(pid);
 myHIDSimplePacketComs.setVid(vid);
 myHIDSimplePacketComs.connect();
 
+cam = webcam();
 cameraParams = load('cameraParams2.mat');
 cameraParams = cameraParams.cameraParams2;
 T_base_check = [-1,0,0,275.800000000000;0,1,0,113.600000000000;0,0,-1,0;0,0,0,1];
+T_cam_check = load('camToCheckTrans.mat'); T_cam_check = T_cam_check.T_cam_check;
 
 % Create a PacketProcessor object to send data to the nucleo firmware
 coms = PacketProcessor(myHIDSimplePacketComs);
