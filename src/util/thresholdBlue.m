@@ -11,16 +11,16 @@ function [BW,maskedRGBImage] = thresholdBlue(RGB, I)
 
 
 % Define thresholds for channel 1 based on histogram settings
-channel1Min = 30.829;
-channel1Max = 69.171;
+channel1Min = 33.092;
+channel1Max = 81.457;
 
 % Define thresholds for channel 2 based on histogram settings
-channel2Min = -27.262;
-channel2Max = 27.725;
+channel2Min = -25.386;
+channel2Max = -0.175;
 
 % Define thresholds for channel 3 based on histogram settings
-channel3Min = -46.453;
-channel3Max = -13.546;
+channel3Min = -51.880;
+channel3Max = -15.954;
 
 % Create mask based on chosen histogram thresholds
 sliderBW = (I(:,:,1) >= channel1Min ) & (I(:,:,1) <= channel1Max) & ...
