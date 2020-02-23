@@ -6,7 +6,6 @@ close all;
 
 %% Initialization and Timing
 [coms, cam, cameraParams, T_base_check, T_cam_check] = initialize();
-steps = 10;
 secondsToRecord = 3;
 frequency = 5;
 period = 1 / frequency; 
@@ -75,60 +74,18 @@ inter = setpoint(1.5, [0 0 0]);
 objs = [yellowObjs; greenObjs; blueObjs];
 if ~isempty(objs)
     for i = 1:length(objs(:,1))
-        final.Position = [objs(i,1), objs(i,2), 0];
-        inter.Position = [objs(i,1), objs(i,2), 50];
+        final.Position = [objs(i,1) + 20, objs(i,2), 0];
+        inter.Position = [objs(i,1) + 20, objs(i,2), 50];
     end
 end
 setpoints = [init, inter, final];
 
 %% Set Up Trajectory Plans
-returnPacket = status(coms);
-[T, ~] = fwkin(-enc2rad(returnPacket(1:3)));
 
-ai = zeros(3, length(setpoints) * 6);
-v0 = 0;
-vf = 0;
-a0 = 0;
-af = 0;
-
-t0 = 0;
-q0 = T(1:3, end).';
-    
-for s = 1:length(setpoints) % Iterate through setpoints
-    tf = setpoints(s).Time;
-    qf = setpoints(s).Position;
-
-    for a = 1:3 % Iterate through axes
-        quintic = quinPolSolve(t0, tf, a0, af, v0, vf, q0(a), qf(a));
-        indices = sub2ind(size(ai), [s s s s s s], [(a-1)*6+1 (a-1)*6+2 (a-1)*6+3 (a-1)*6+4 (a-1)*6+5 (a-1)*6+6]);
-        ai(indices) = quintic;
-    end
-    
-    t0 = tf;
-    q0 = qf;
-end
-
-%% Create Trajectory Setpoints
-
-full_trajectory = [];
-q = zeros(1,3);
-
-current_setpoint = setpoint(0, T(1:3, end).');
-
-for s = 1:length(setpoints)
-    next_setpoint = setpoints(s);
-    
-    for t = linspace(current_setpoint.Time, next_setpoint.Time, steps)
-        for a = 1:3 % Iterate through axes
-            q(a) = ai(s, (a-1)*6+1) + ai(s, (a-1)*6+2) * t + ai(s, (a-1)*6+3) * t^2 + ai(s, (a-1)*6+4) * t^3 + ai(s, (a-1)*6+5) * t^4+ ai(s, (a-1)*6+6) * t^5;
-        end
-        full_trajectory = [full_trajectory, setpoint(t, [q(1), q(2), q(3)])];
-    end
-    
-    current_setpoint = next_setpoint;
-end
-
-curr_setpoint = full_trajectory(1);
+% TODO: Generate all trajectories
+trajectories = [trajectory(setpoints, q0)];
+curr_trajectory = 1;
+curr_setpoint = trajectories(curr_trajectory).getNextSetpoint();
 
 %% Set up data collection
 % csvfile = fopen(sprintf('../logs/log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
@@ -195,15 +152,20 @@ while 1
     % Setpoint handling
     % Execute the next setpoint if the current one has passed
     if curr_setpoint.HasExecuted
-        [setpoint_idx, next_setpoint] = setpoint.getNextSetpoint(full_trajectory);
+        [setpoint_idx, next_setpoint] = trajectory(curr_trajectory).getNextSetpoint();
 
         if current_time >= curr_setpoint.Time
             curr_setpoint = next_setpoint;
         end
 
         if setpoint_idx == length(full_trajectory) + 1
-            % Stay at the last setpoint forever if we've run out of setpoints
-            curr_setpoint = full_trajectory(end); 
+            if length(trajectories) < curr_trajectory
+                curr_trajectory = curr_trajectory + 1;
+                curr_setpoint = trajectories(curr_trajectory).getNextSetpoint();
+            else
+                % Stay at the last setpoint forever if we've run out of setpoints
+                curr_setpoint = full_trajectory(end); 
+            end
         end
     else
         rad_setpoint = ikin(curr_setpoint.execute());
