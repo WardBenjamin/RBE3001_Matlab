@@ -1,10 +1,10 @@
 clear;
 
 % Load test image
-testImage = imread('image_pipeline_test.png');
-testImageGrey = rgb2gray(testImage);
+% testImage = imread('image_pipeline_test.png');
+% testImageGrey = rgb2gray(testImage);
 % In practice: cam = webcam(); image = snapshot(cam);
-% cam = webcam(); testImage = snapshot(cam); testImageGrey = rgb2gray(testImage);
+cam = webcam(); testImage = snapshot(cam); testImageGrey = rgb2gray(testImage);
 
 % Convert testImage from RGB color-space to LAB
 testImageLab = rgb2lab(testImage);
@@ -21,13 +21,7 @@ kMask = imerode(bwareaopen(thresholdBlack(testImageGrey), 300), strel('disk', 8,
 [bC, bR] = findObjects(bMask, true);
 [objSize, foundObjects] = findObjectSize([yC; gC; bC], kMask)
 
-yEnd = length(yC) / 2;
-gEnd = length(gC) / 2 + yEnd;
-bEnd = length(bC) / 2 + gEnd;
-
-yellowObjects = [yC objSize(1:yEnd, 1)]
-greenObjects = [gC objSize(yEnd + 1:gEnd, 1)]
-blueObjects = [bC objSize(gEnd + 1:end, 1)]
+[yellowObjects, greenObjects, blueObjects, blackObjects] = findObjSizes(yC,gC,bC,kMask);
 
 % Display detected objects
 figure(1);

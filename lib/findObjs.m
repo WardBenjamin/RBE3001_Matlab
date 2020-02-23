@@ -1,4 +1,4 @@
-function [imDetectedDisk, robotFramePose, diskDia] = findObjs(imOrig, T_checker_to_robot, T_cam_to_checker, cameraParams)
+function [yellowObjs, greenObjs, blueObjs, blackObjs, yRadii, gRadii, bRadii, yMask, gMask, bMask, kMask] = findObjs(imOrig, T_checker_to_robot, T_cam_to_checker, cameraParams)
 % FINDOBJS implements a sequence of image processing steps to detect
 % any objects of interest that may be present in an RGB image.
 %
@@ -53,26 +53,47 @@ function [imDetectedDisk, robotFramePose, diskDia] = findObjs(imOrig, T_checker_
 
 [yMask, gMask, bMask, kMask] = processImage(im);
 
-[yC, yR] = findObjLocations(yMask);
-[gC, gR] = findObjLocations(gMask);
-[bC, bR] = findObjLocations(bMask, true);
+[yCentr, yRadii] = findObjLocations(yMask);
+[gCentr, gRadii] = findObjLocations(gMask);
+[bCentr, bRadii] = findObjLocations(bMask, true);
 
-[yellowObjects, greenObjects, blueObjects, blackObjects] = findObjSizes(yC, gC, bC, kMask);
+[yellowObjs, greenObjs, blueObjs, blackObjs] = findObjSizes(yCentr, gCentr, bCentr, kMask);
 
 % You can easily convert image pixel coordinates to 3D coordinates (expressed in the
 % checkerboard reference frame) using the following transformations:
 
 R = T_cam_to_checker(1:3,1:3);
 t = T_cam_to_checker(1:3,4);
-worldPoints = pointsToWorld(cameraParams, R, t, [303 247; 518 397; 538 393; 554 369]);
-% worldPoints = T_checker_to_robot * [worldPoints(
-[len, ~] = size(worldPoints);
-worldPoints = horzcat(horzcat(worldPoints, zeros(len,1)), ones(len,1)).';
 
-for i = 1:len
-    T_checker_to_robot * worldPoints(1:end, i)
+% TODO: Use object classes because matrix operations are hard
+if ~isempty(yellowObjs)
+    disp('Yellow');
+    yellowObjs = horzcat(horzcat(cameraToWorld(yellowObjs(:,1:2), cameraParams, R, t, T_checker_to_robot), yellowObjs(:,end)), yellowObjs(:,1:2));
 end
 
+if ~isempty(greenObjs)
+    disp('Green');
+    greenObjs = horzcat(horzcat(cameraToWorld(greenObjs(:,1:2), cameraParams, R, t, T_checker_to_robot), greenObjs(:,end)), greenObjs(:,1:2));
+end
+
+if ~isempty(blueObjs)
+    disp('Blue');
+    blueObjs = horzcat(horzcat(cameraToWorld(blueObjs(:,1:2), cameraParams, R, t, T_checker_to_robot), blueObjs(:,end)), blueObjs(:,1:2));
+end
 % see https://www.mathworks.com/help/vision/ref/cameraparameters.pointstoworld.html
 % for details on the expected dimensions for YOUR_PIXEL_VALUES)
+end
+
+function worldCentroids = cameraToWorld(cameraCentroids, cameraParams, R, t, T_checker_to_robot)
+    checkCentroids = pointsToWorld(cameraParams, R, t, cameraCentroids);
+
+    [len, ~] = size(checkCentroids);
+    worldCentroids = horzcat(horzcat(checkCentroids, zeros(len,1)), ones(len,1)).';
+    
+    for i = 1:len
+        worldCentroids(1:end, i) = T_checker_to_robot * worldCentroids(1:end, i)
+    end
+    
+    worldCentroids = worldCentroids.';
+    worldCentroids = worldCentroids(:,1:2);
 end
