@@ -51,18 +51,26 @@ imshow(yMask | gMask | bMask);
 
 %% Manually Fix Y-Transformation
 %TODO: Fix transformation so that y-coordinate is correct
-for y = 1:length(yellowObjs(:,1))
-    yellowObjs(y,2) = yellowObjs(y,2) + 222;
+%Added conditions to fix keep matrix index error on empty Objs matricies
+%from occuring
+
+if ~isempty(yellowObjs)
+    for y = 1:length(yellowObjs(:,1))
+        yellowObjs(y,2) = yellowObjs(y,2) + 222;
+    end
 end
 
-for g = 1:length(greenObjs(:,1))
-    greenObjs(g,2) = greenObjs(g,2) + 222;
+if ~isempty(greenObjs)
+    for g = 1:length(greenObjs(:,1))
+        greenObjs(g,2) = greenObjs(g,2) + 222;
+    end
 end
 
-for b = 1:length(blueObjs(:,1))
-    blueObjs(b,2) = blueObjs(b,2) + 222;
+if ~isempty(blueObjs)
+    for b = 1:length(blueObjs(:,1))
+        blueObjs(b,2) = blueObjs(b,2) + 222;
+    end
 end
-
 %% Identify Effector Setpoint
 returnPacket = status(coms);
 [T, ~] = fwkin(-enc2rad(returnPacket(1:3)));
@@ -85,7 +93,8 @@ setpoints = [init, inter, final];
 % TODO: Generate all trajectories
 trajectories = [trajectory(setpoints, q0)];
 curr_trajectory = 1;
-curr_setpoint = trajectories(curr_trajectory).getNextSetpoint();
+full_trajectory = trajectories(curr_trajectory).Setpoints;
+[~, curr_setpoint] = trajectories(curr_trajectory).getNextSetpoint();
 
 %% Set up data collection
 % csvfile = fopen(sprintf('../logs/log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
@@ -152,7 +161,7 @@ while 1
     % Setpoint handling
     % Execute the next setpoint if the current one has passed
     if curr_setpoint.HasExecuted
-        [setpoint_idx, next_setpoint] = trajectory(curr_trajectory).getNextSetpoint();
+        [setpoint_idx, next_setpoint] = trajectories(curr_trajectory).getNextSetpoint();
 
         if current_time >= curr_setpoint.Time
             curr_setpoint = next_setpoint;
@@ -179,6 +188,8 @@ while 1
     idx = idx + 1;
 end
 
+%close the gripper on object
+%set_gripper(coms, 0);
 % set_setpoint(coms, [0 0 0]);
 
 %% Close the csv file
