@@ -13,24 +13,24 @@ loop_iterations = secondsToRecord * frequency;
 set_gripper(coms, 1); % Open gripper
 set_gripper(coms, 1);
 
-%% Collect Image
-image = snapshot(cam);
-
-%% Obtain Object Locations
-[yellowObjs, greenObjs, blueObjs, blackObjs, yRadii, gRadii, bRadii, yMask, gMask, bMask, kMask] = findObjs(image, inv(T_base_check), T_cam_check, cameraParams);
-
-figure(2);
-imshow(image);
-hold on;
-if ~isempty(yellowObjs)
-    viscircles(yellowObjs(:,4:5), yRadii, 'Color', 'y', 'LineWidth', 4);
-end
-if ~isempty(greenObjs)
-    viscircles(greenObjs(:,4:5), gRadii, 'Color', 'g', 'LineWidth', 4);
-end
-if ~isempty(blueObjs)
-    viscircles(blueObjs(:,4:5), bRadii, 'Color', 'b', 'LineWidth', 4);
-end
+% %% Collect Image
+% image = snapshot(cam);
+% 
+% %% Obtain Object Locations
+% [yellowObjs, greenObjs, blueObjs, blackObjs, yRadii, gRadii, bRadii, yMask, gMask, bMask, kMask] = findObjs(image, inv(T_base_check), T_cam_check, cameraParams);
+% 
+% figure(2);
+% imshow(image);
+% hold on;
+% if ~isempty(yellowObjs)
+%     viscircles(yellowObjs(:,4:5), yRadii, 'Color', 'y', 'LineWidth', 4);
+% end
+% if ~isempty(greenObjs)
+%     viscircles(greenObjs(:,4:5), gRadii, 'Color', 'g', 'LineWidth', 4);
+% end
+% if ~isempty(blueObjs)
+%     viscircles(blueObjs(:,4:5), bRadii, 'Color', 'b', 'LineWidth', 4);
+% end
 
 %% Display Object Data
 % figure(2);
@@ -49,50 +49,39 @@ figure(3);
 imshow(yMask | gMask | bMask);
 
 
-%% Manually Fix Y-Transformation
+%% Manually Fix Y-Transformation and Generate Trajectories
 %TODO: Fix transformation so that y-coordinate is correct
 %Added conditions to fix keep matrix index error on empty Objs matricies
 %from occuring
 
+yellTraj = [];
+greenTraj = [];
+blueTraj = [];
+
+returnPacket = status(coms);
+[T, ~] = fwkin(-enc2rad(returnPacket(1:3)));
+initialPosition = T(1:3, end).';
+
 if ~isempty(yellowObjs)
-    for y = 1:length(yellowObjs(:,1))
-        yellowObjs(y,2) = yellowObjs(y,2) + 222;
-    end
+
+    yellTraj = genTrajectories(yellowObjs, 1, initialPosition);
 end
 
 if ~isempty(greenObjs)
     for g = 1:length(greenObjs(:,1))
         greenObjs(g,2) = greenObjs(g,2) + 222;
     end
+    greenTraj = genTrajectories(greenObjs, 3, initialPosition);
 end
 
 if ~isempty(blueObjs)
     for b = 1:length(blueObjs(:,1))
         blueObjs(b,2) = blueObjs(b,2) + 222;
     end
+    blueTraj = genTrajectories(blueObjs, 2, initialPosition);
 end
-%% Identify Effector Setpoint
-returnPacket = status(coms);
-[T, ~] = fwkin(-enc2rad(returnPacket(1:3)));
-q0 = T(1:3, end).';
 
-init = setpoint(0.5, [q0(1), q0(2), 50]);
-final = setpoint(2, [0 0 0]);
-inter = setpoint(1.5, [0 0 0]);
-objs = [yellowObjs; greenObjs; blueObjs];
-if ~isempty(objs)
-    for i = 1:length(objs(:,1))
-        final.Position = [objs(i,1) + 20, objs(i,2), 0];
-        inter.Position = [objs(i,1) + 20, objs(i,2), 50];
-    end
-end
-setpoints = [init, inter, final];
-
-%% Set Up Trajectory Plans
-
-% TODO: Generate all trajectories
-trajectories = [trajectory(setpoints, q0)];
-curr_trajectory = 1;
+%% Generate Trajectories
 full_trajectory = trajectories(curr_trajectory).Setpoints;
 [~, curr_setpoint] = trajectories(curr_trajectory).getNextSetpoint();
 
@@ -118,6 +107,7 @@ singularityThreshold = 8*10^6; %TODO: What should this be? Need to test.
 
 tic
 idx = 1;
+accTime = 0;
 
 while 1
 % for idx = 1:loop_iterations  
