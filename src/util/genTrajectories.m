@@ -1,18 +1,19 @@
-function [trajs, yellowObjs, greenObjs, blueObjs, blackObjs, yRadii, gRadii, bRadii, yMask, gMask, bMask, kMask] = genTrajectories(cam, q0)
+function [trajs, yellowObjs, greenObjs, blueObjs, blackObjs, yRadii, gRadii, bRadii, yMask, gMask, bMask, kMask] = genTrajectories(cam, q0, T_base_check, T_cam_check, cameraParams)
     COLOR_YELLOW = 1;
     COLOR_GREEN = 2;
     COLOR_BLUE = 3;
     
-    YELLOW_DROP = [[200 150 0]; [200 -150 0]];
-    GREEN_DROP = [[150 150 0]; [150 -150 0]];
-    BLUE_DROP = [[100 150 0]; [100 -150 0]];
+    %TODO: Fix x-coordinates for dropoff
+    YELLOW_DROP = [[200 220 -20]; [200 220 -20]];
+    GREEN_DROP = [[150 220 -20]; [150 220 -20]];
+    BLUE_DROP = [[100 220 -20]; [100 220 -20]];
     
     %% Collect Image
     image = snapshot(cam);
 
     %% Obtain Object Locations
     [yellowObjs, greenObjs, blueObjs, blackObjs, yRadii, gRadii, bRadii, yMask, gMask, bMask, kMask] = findObjs(image, inv(T_base_check), T_cam_check, cameraParams);
-
+    
     %% Identify Effector Setpoint
     
     color = 0;
@@ -28,7 +29,7 @@ function [trajs, yellowObjs, greenObjs, blueObjs, blackObjs, yRadii, gRadii, bRa
         color = COLOR_BLUE;
     end
     
-    if ~isempty(objs)
+    if isempty(objs)
         trajs = [];
         return;
     end

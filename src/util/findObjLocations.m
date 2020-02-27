@@ -16,7 +16,7 @@ function [centroids, radii] = findObjLocations(mask, filterSmall)
 %                 idx = idx + 1;
 %             end
 %         end
-        for idx = 1:length(centroids)
+        for idx = 1:size(centroids, 1)
             % Arbitrary threshold found through inspection
             if stats.MajorAxisLength(idx)/stats.MinorAxisLength(idx) > 1.2 
                 centroids(idx - offset, :) = [];
