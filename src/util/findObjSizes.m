@@ -81,6 +81,13 @@ end
 function [objSize, foundObjects] = findObjectSize(coloredCentroids, kMask)
     % Find black regions near colored regions
     % Determine whether object is "large" or "small"
+    
+    if isempty(coloredCentroids)
+        objSize = [];
+        foundObjects = [];
+        return;
+    end
+    
     stats = regionprops('table', kMask, 'Centroid', 'MajorAxisLength', 'MinorAxisLength');
     kCentroids = stats.Centroid;
     [nearestIdx, dist] = dsearchn(kCentroids, coloredCentroids)

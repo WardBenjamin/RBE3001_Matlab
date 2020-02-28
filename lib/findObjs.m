@@ -69,16 +69,25 @@ t = T_cam_to_checker(1:3,4);
 if ~isempty(yellowObjs)
     disp('Yellow');
     yellowObjs = horzcat(horzcat(cameraToWorld(yellowObjs(:,1:2), cameraParams, R, t, T_checker_to_robot), yellowObjs(:,end)), yellowObjs(:,1:2));
+    for idx = 1:length(yellowObjs(:, 1))
+        yellowObjs(idx, 2) = yellowObjs(idx, 2) + 222;
+    end
 end
 
 if ~isempty(greenObjs)
     disp('Green');
     greenObjs = horzcat(horzcat(cameraToWorld(greenObjs(:,1:2), cameraParams, R, t, T_checker_to_robot), greenObjs(:,end)), greenObjs(:,1:2));
+    for idx = 1:length(greenObjs(:, 1))
+        greenObjs(idx, 2) = greenObjs(idx, 2) + 222;
+    end
 end
 
 if ~isempty(blueObjs)
     disp('Blue');
     blueObjs = horzcat(horzcat(cameraToWorld(blueObjs(:,1:2), cameraParams, R, t, T_checker_to_robot), blueObjs(:,end)), blueObjs(:,1:2));
+    for idx = 1:length(blueObjs(:, 1))
+        blueObjs(idx, 2) = blueObjs(idx, 2) + 222;
+    end
 end
 % see https://www.mathworks.com/help/vision/ref/cameraparameters.pointstoworld.html
 % for details on the expected dimensions for YOUR_PIXEL_VALUES)

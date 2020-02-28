@@ -55,8 +55,10 @@ status(coms);
 pid_config(coms, [.0007, .0004, 0], [.003 0 0.00005], [.005, 0, 0.001]);
 pid_config(coms, [.0007, .0004, 0], [.0012 0 0.00005], [.0015, 0, 0.001]);
 
-set_setpoint(coms, [0 0 0]);
-set_setpoint(coms, [0 0 0]);
+rad_setpoint = ikin([175 0 50]);
+
+set_setpoint(coms, -rad2enc(rad_setpoint));
+set_setpoint(coms, -rad2enc(rad_setpoint));
 
 % java.lang.Thread.sleep(250);
 pause(.5);

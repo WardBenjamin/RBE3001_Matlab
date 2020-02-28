@@ -1,4 +1,4 @@
-function set_gripper(pp, open)
+function set_gripper(pp, open, exact)
 try
         SERV_ID = 05;            % we will be talking to server ID 05 on
         % the Nucleo
@@ -12,6 +12,13 @@ try
         packet = zeros(15, 1, 'single');
         if open
             packet(1) = 1;
+            packet(2) = 0.999;
+        else
+            packet(1) = 1;
+            packet(2) = 0.25;
+        end
+        if nargin > 2
+            packet(2) = exact;
         end
         packet(15) = 1; % Wakeup gate
 

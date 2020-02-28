@@ -50,16 +50,40 @@ set_gripper(coms, 1);
 
 
 
+
+
 %% Generate Initial Trajectory
 returnPacket = status(coms);
 [T, ~] = fwkin(-enc2rad(returnPacket(1:3)));
 q0 = T(1:3, end).';
 
-[full_trajectory, ~] = genTrajectories(cam, q0, T_base_check, T_cam_check, cameraParams);
+DEBUG = true;
+
+if DEBUG
+    [full_trajectory, yellowObjs, greenObjs, blueObjs, blackObjs, yRadii, gRadii, bRadii, yMask, gMask, bMask, kMask, sourceImage] = genTrajectories(cam, q0, T_base_check, T_cam_check, cameraParams);
+    figure(2);
+    imshow(sourceImage);
+    hold on;
+    if ~isempty(yellowObjs)
+        viscircles(yellowObjs(:,4:5), yRadii, 'Color', 'y', 'LineWidth', 4);
+    end
+    if ~isempty(greenObjs)
+        viscircles(greenObjs(:,4:5), gRadii, 'Color', 'g', 'LineWidth', 4);
+    end
+    if ~isempty(blueObjs)
+        viscircles(blueObjs(:,4:5), bRadii, 'Color', 'b', 'LineWidth', 4);
+    end
+    figure(1);
+else
+    [full_trajectory, ~] = genTrajectories(cam, q0, T_base_check, T_cam_check, cameraParams);
+end
+
 if ~isempty(full_trajectory)
     curr_trajectory = full_trajectory(1);
     curr_setpoint = curr_trajectory.Setpoints(1);
 end
+
+
 
 %% Set up data collection
 % csvfile = fopen(sprintf('../logs/log_%s.csv', datestr(now, 'mm-dd-yyyy_HH-MM-SS')), 'a');
@@ -129,18 +153,40 @@ while 1
             curr_setpoint = next_setpoint;
         end
         if curr_trajectory.HasFinished()
+            % Toggle the gripper state
             gripperStatus = ~gripperStatus;
-            java.lang.Thread.sleep(100); %% Attempting to give robot a chance to grip the orb thing
+            
+            java.lang.Thread.sleep(250); %% Attempting to give robot a chance to grip the orb thing
             set_gripper(coms, gripperStatus);
             set_gripper(coms, gripperStatus);
-            java.lang.Thread.sleep(50); %% Attempting to give robot a chance to grip the orb thing
-            accTime = toc;
+            java.lang.Thread.sleep(250); %% Attempting to give robot a chance to grip the orb thing
+            
+            accTime = accTime + toc;
             tic;
+            
             [trajIdx, curr_trajectory] = curr_trajectory.getNextTrajectory(full_trajectory);
             if (length(full_trajectory) + 1) > trajIdx
                 curr_setpoint = curr_trajectory.Setpoints(1);
             else
-                [full_trajectory, ~] = genTrajectories(cam, T(1:3, end).', T_base_check, T_cam_check, cameraParams);
+                if DEBUG
+                    [full_trajectory, yellowObjs, greenObjs, blueObjs, blackObjs, yRadii, gRadii, bRadii, yMask, gMask, bMask, kMask, sourceImage] = genTrajectories(cam, T(1:3, end).', T_base_check, T_cam_check, cameraParams);
+                    figure(2);
+                    imshow(sourceImage);
+                    hold on;
+                    if ~isempty(yellowObjs)
+                        viscircles(yellowObjs(:,4:5), yRadii, 'Color', 'y', 'LineWidth', 4);
+                    end
+                    if ~isempty(greenObjs)
+                        viscircles(greenObjs(:,4:5), gRadii, 'Color', 'g', 'LineWidth', 4);
+                    end
+                    if ~isempty(blueObjs)
+                        viscircles(blueObjs(:,4:5), bRadii, 'Color', 'b', 'LineWidth', 4);
+                    end
+                    figure(1);
+                else
+                    [full_trajectory, ~] = genTrajectories(cam, T(1:3, end).', T_base_check, T_cam_check, cameraParams);
+                end
+                
                 if ~isempty(full_trajectory)
                     curr_trajectory = full_trajectory(1);
                     curr_setpoint = curr_trajectory.Setpoints(1);
@@ -157,6 +203,9 @@ while 1
 
     idx = idx + 1;
 end
+
+rad_setpoint = ikin([175 0 50]);
+set_setpoint(coms, -rad2enc(rad_setpoint));
 
 %close the gripper on object
 %set_gripper(coms, 0);
