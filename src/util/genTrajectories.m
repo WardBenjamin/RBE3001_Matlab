@@ -1,9 +1,21 @@
 function [trajs, yellowObjs, greenObjs, blueObjs, blackObjs, yRadii, gRadii, bRadii, yMask, gMask, bMask, kMask, sourceImage] = genTrajectories(cam, q0, T_base_check, T_cam_check, cameraParams)
+% genTrajectories Calculates the quintic trajectory between the current end
+% effector position and that of the next object to pick up. Detects objects
+% using a webcam snapshot and findObjs.
+%
+%   Authors
+%   -------
+%   Benjamin Ward      <blward@wpi.edu>
+%   Teresa Saddler     <tsaddler@wpi.edu>
+%
+%   Latest Revision
+%   ---------------
+%   03/04/2020
+
     COLOR_YELLOW = 1;
     COLOR_GREEN = 2;
     COLOR_BLUE = 3;
     
-    %TODO: Fix x-coordinates for dropoff
     YELLOW_DROP = [[200 220 -20]; [200 -220 -20]];
     GREEN_DROP = [[150 220 -20]; [150 -220 -20]];
     BLUE_DROP = [[100 220 -20]; [100 -220 -20]];

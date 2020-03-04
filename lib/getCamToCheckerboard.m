@@ -28,10 +28,11 @@ function T_cam_to_checker = getCamToCheckerboard(cam, cameraParams)
 %   Nathaniel Dennler  <nsdennler@wpi.edu>
 %   Sean O'Neil        <stoneil@wpi.edu> 
 %   Loris Fichera      <lfichera@wpi.edu>
+%   Benjamin Ward      <blward@wpi.edu>
 %
 %   Latest Revision
 %   ---------------
-%   2/12/2019
+%   03/04/2020
 
 %%  1. Capture an image from the imaging device
     imOrig = snapshot(cam);
